@@ -233,6 +233,69 @@ language sql security definer as $$
   limit 10;
 $$;
 
+-- member_rank 自動更新トリガー
+create or replace function recalc_member_rank(p_user_id uuid)
+returns void language plpgsql security definer as $$
+declare
+  v_total_hours  numeric;
+  v_total_amount bigint;
+  v_rating       numeric;
+  v_gender       text;
+  v_new_rank     text;
+begin
+  select coalesce(sum(seating_hours), 0), coalesce(sum(amount), 0)
+  into v_total_hours, v_total_amount
+  from public.visit_logs where user_id = p_user_id;
+
+  select rating, gender into v_rating, v_gender
+  from public.profiles where id = p_user_id;
+
+  v_new_rank := 'BRONZE';
+  if v_gender = 'female' then
+    if    v_total_hours >= 90 and v_rating >= 3.5 then v_new_rank := 'DIAMOND';
+    elsif v_total_hours >= 45 and v_rating >= 3.3 then v_new_rank := 'PLATINUM';
+    elsif v_total_hours >= 13 and v_rating >= 3.1 then v_new_rank := 'GOLD';
+    elsif v_total_hours >= 2                       then v_new_rank := 'SILVER';
+    end if;
+  else
+    if    v_total_hours >= 45 and v_rating >= 3.5 then v_new_rank := 'DIAMOND';
+    elsif v_total_hours >= 25 and v_rating >= 3.3 then v_new_rank := 'PLATINUM';
+    elsif v_total_hours >= 10 and v_rating >= 3.1 then v_new_rank := 'GOLD';
+    elsif v_total_hours >= 2                       then v_new_rank := 'SILVER';
+    end if;
+  end if;
+
+  update public.profiles
+  set member_rank   = v_new_rank,
+      seating_hours = v_total_hours,
+      mileage       = v_total_amount::int
+  where id = p_user_id;
+end;
+$$;
+
+create or replace function trigger_recalc_member_rank()
+returns trigger language plpgsql security definer as $$
+begin
+  perform recalc_member_rank(new.user_id);
+  return new;
+end;
+$$;
+
+drop trigger if exists on_visit_log_change on public.visit_logs;
+create trigger on_visit_log_change
+  after insert or update on public.visit_logs
+  for each row execute function trigger_recalc_member_rank();
+
+create or replace function update_all_member_ranks()
+returns void language plpgsql security definer as $$
+declare v_uid uuid;
+begin
+  for v_uid in (select distinct user_id from public.visit_logs) loop
+    perform recalc_member_rank(v_uid);
+  end loop;
+end;
+$$;
+
 -- -------------------------------------------------------
 -- 8. Storage: profile-photos バケット
 -- -------------------------------------------------------
