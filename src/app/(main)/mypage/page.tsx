@@ -119,27 +119,34 @@ function calcAge(birthday: string | null): number | null {
   return age
 }
 
-type RankingUser = { rank: number; nickname: string; mileage: number; memberRank: MemberRank }
-
-function calcRankFromProfile(rating: number, hours: number, gender: string): MemberRank {
-  const g = gender === 'female' ? 'female' : 'male'
-  for (const rank of ['DIAMOND', 'PLATINUM', 'GOLD', 'SILVER'] as MemberRank[]) {
-    const cond = RANK_CONDITIONS[rank]
-    if (cond.rating && rating < cond.rating) continue
-    if (hours < cond.hours[g]) continue
-    return rank
-  }
-  return 'BRONZE'
-}
+type RankingUser = { rank: number; userId: string; nickname: string; value: number }
+type RankingMetric = 'amount' | 'hours'
+type RankingPeriod = 'daily' | 'monthly' | 'total'
 
 export default function MyPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<DbProfile | null>(null)
   const [rankingUsers, setRankingUsers] = useState<RankingUser[]>([])
+  const [rankingMetric, setRankingMetric] = useState<RankingMetric>('amount')
+  const [rankingPeriod, setRankingPeriod] = useState<RankingPeriod>('monthly')
+  const [rankingLoading, setRankingLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'rank' | 'badge'>('rank')
   const [showRankInfo, setShowRankInfo] = useState(false)
+
+  async function loadRanking(metric: RankingMetric, period: RankingPeriod) {
+    setRankingLoading(true)
+    const supabase = createClient()
+    const { data } = await supabase.rpc('get_ranking', { p_metric: metric, p_period: period })
+    setRankingUsers((data ?? []).map((u: { rank: number; user_id: string; nickname: string; value: number }) => ({
+      rank: Number(u.rank),
+      userId: u.user_id,
+      nickname: u.nickname,
+      value: Number(u.value),
+    })))
+    setRankingLoading(false)
+  }
 
   useEffect(() => {
     async function load() {
@@ -149,19 +156,7 @@ export default function MyPage() {
       setCurrentUserId(user.id)
       const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(data)
-
-      const { data: topUsers } = await supabase
-        .from('profiles')
-        .select('id, nickname, mileage, rating, seating_hours, gender')
-        .order('mileage', { ascending: false })
-        .limit(10)
-      setRankingUsers((topUsers ?? []).map((u, i) => ({
-        rank: i + 1,
-        nickname: u.nickname,
-        mileage: u.mileage ?? 0,
-        memberRank: calcRankFromProfile(u.rating ?? 3.0, u.seating_hours ?? 0, u.gender ?? 'male'),
-      })))
-
+      await loadRanking('amount', 'monthly')
       setLoading(false)
     }
     load()
@@ -413,13 +408,47 @@ export default function MyPage() {
 
         <div className="mx-4 mb-4">
           <h2 className="text-sm font-bold mb-3">ランキング</h2>
+
+          {/* 会計 / 相席時間 */}
+          <div className="flex mb-2 rounded-xl bg-zinc-800 p-1">
+            {(['amount', 'hours'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => { setRankingMetric(m); loadRanking(m, rankingPeriod) }}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors ${rankingMetric === m ? 'bg-white text-black' : 'text-zinc-400'}`}
+              >
+                {m === 'amount' ? '会計' : '相席時間'}
+              </button>
+            ))}
+          </div>
+
+          {/* 日別 / 月別 / 累計 */}
+          <div className="flex mb-3 gap-1.5">
+            {(['daily', 'monthly', 'total'] as const).map((p) => (
+              <button
+                key={p}
+                onClick={() => { setRankingPeriod(p); loadRanking(rankingMetric, p) }}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${rankingPeriod === p ? 'border-white text-white bg-white/10' : 'border-zinc-700 text-zinc-500'}`}
+              >
+                {p === 'daily' ? '日別' : p === 'monthly' ? '月別' : '累計'}
+              </button>
+            ))}
+          </div>
+
           <div className="bg-zinc-900 rounded-2xl overflow-hidden">
-            {rankingUsers.map((u) => (
-              <div key={u.rank} className={`flex items-center gap-3 px-4 py-3 border-b border-zinc-800 last:border-0`}>
-                <span className={`text-sm font-bold w-6 text-center ${u.rank <= 3 ? 'text-yellow-400' : 'text-zinc-500'}`}>{u.rank}</span>
-                <span className="flex-1 text-sm">{u.nickname}</span>
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${RANK_BADGE_COLORS[u.memberRank]}`}>{RANK_LABELS[u.memberRank]}</span>
-                <span className="text-yellow-400 text-xs font-bold">{u.mileage.toLocaleString()}pt</span>
+            {rankingLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="w-5 h-5 border-2 border-zinc-600 border-t-white rounded-full animate-spin" />
+              </div>
+            ) : rankingUsers.length === 0 ? (
+              <p className="text-center text-zinc-600 text-xs py-8">データなし</p>
+            ) : rankingUsers.map((u) => (
+              <div key={u.rank} className={`flex items-center gap-3 px-4 py-3 border-b border-zinc-800 last:border-0 ${u.userId === currentUserId ? 'bg-zinc-800/60' : ''}`}>
+                <span className={`text-sm font-bold w-6 text-center flex-shrink-0 ${u.rank <= 3 ? 'text-yellow-400' : 'text-zinc-500'}`}>{u.rank}</span>
+                <span className="flex-1 text-sm truncate">{u.nickname}</span>
+                <span className="text-yellow-400 text-xs font-bold flex-shrink-0">
+                  {rankingMetric === 'amount' ? `¥${u.value.toLocaleString()}` : `${u.value.toFixed(1)}h`}
+                </span>
               </div>
             ))}
           </div>

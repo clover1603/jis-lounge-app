@@ -195,7 +195,46 @@ insert into public.menu_items (id, name, price, category, description) values
 on conflict (id) do nothing;
 
 -- -------------------------------------------------------
--- 7. Storage: profile-photos バケット
+-- 7. visit_logs（来店履歴・会計・相席時間）
+-- -------------------------------------------------------
+create table if not exists public.visit_logs (
+  id            uuid default gen_random_uuid() primary key,
+  user_id       uuid references auth.users(id) on delete cascade not null,
+  store_id      text references public.stores(id),
+  visited_at    date not null default current_date,
+  amount        int default 0,
+  seating_hours numeric(5,1) default 0,
+  created_at    timestamptz default now()
+);
+alter table public.visit_logs enable row level security;
+create policy "全員閲覧可" on public.visit_logs for select using (true);
+create policy "自分のみ挿入可" on public.visit_logs for insert with check (auth.uid() = user_id);
+
+-- ランキング集計 RPC
+create or replace function get_ranking(p_metric text, p_period text)
+returns table (rank bigint, user_id uuid, nickname text, value numeric)
+language sql security definer as $$
+  select
+    row_number() over (order by sum(
+      case when p_metric = 'amount' then v.amount::numeric else v.seating_hours end
+    ) desc),
+    v.user_id,
+    p.nickname,
+    sum(case when p_metric = 'amount' then v.amount::numeric else v.seating_hours end)
+  from public.visit_logs v
+  join public.profiles p on p.id = v.user_id
+  where case
+    when p_period = 'daily'   then v.visited_at = current_date
+    when p_period = 'monthly' then date_trunc('month', v.visited_at) = date_trunc('month', current_date)
+    else true
+  end
+  group by v.user_id, p.nickname
+  order by 4 desc
+  limit 10;
+$$;
+
+-- -------------------------------------------------------
+-- 8. Storage: profile-photos バケット
 -- -------------------------------------------------------
 -- Supabase Dashboard > Storage > New bucket
 -- Name: profile-photos / Public: ON
