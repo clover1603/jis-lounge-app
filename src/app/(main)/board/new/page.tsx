@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import NoPhotoSheet from '@/components/NoPhotoSheet'
 
 const MAX_CHARS = 200
 
@@ -18,6 +19,17 @@ export default function NewPostPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const [hasPhoto, setHasPhoto] = useState(true)
+  const [showNoPhoto, setShowNoPhoto] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return
+      const { data } = await supabase.from('profiles').select('photos').eq('id', user.id).single()
+      setHasPhoto((data?.photos ?? []).length > 0)
+    })
+  }, [])
 
   function togglePref(pref: string) {
     setSelectedPrefs(prev => prev.includes(pref) ? prev.filter(p => p !== pref) : [...prev, pref])
@@ -115,12 +127,13 @@ export default function NewPostPage() {
 
       <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 pt-3 bg-black border-t border-zinc-800">
         <button
-          onClick={handleSubmit}
+          onClick={() => !hasPhoto ? setShowNoPhoto(true) : handleSubmit()}
           disabled={!content.trim() || submitting}
           className="w-full bg-white text-black font-semibold rounded-xl py-3.5 text-sm disabled:opacity-40"
         >
           {submitting ? '投稿中...' : '投稿する'}
         </button>
+        {showNoPhoto && <NoPhotoSheet onClose={() => setShowNoPhoto(false)} />}
       </div>
     </div>
   )

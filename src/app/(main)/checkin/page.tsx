@@ -1,13 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { mockStores } from '@/lib/mock-data'
+import { createClient } from '@/lib/supabase/client'
 
 export default function CheckinPage() {
   const router = useRouter()
-  const [selectedStore, setSelectedStore] = useState(mockStores[4].name) // J梅田 default
+  const [stores, setStores] = useState<{ id: string; name: string }[]>([])
+  const [selectedStore, setSelectedStore] = useState('')
   const [scanState, setScanState] = useState<'idle' | 'success'>('idle')
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('stores').select('id, name').order('name').then(({ data }) => {
+      const list = data ?? []
+      setStores(list)
+      if (list.length > 0) setSelectedStore(list[0].name)
+    })
+  }, [])
 
   function handleScan() {
     setScanState('success')
@@ -23,30 +33,12 @@ export default function CheckinPage() {
       </header>
 
       <div className="flex-1 flex flex-col items-center justify-center px-8 gap-8">
-        {/* QR scan frame — 200×200px */}
         <div className="relative" style={{ width: 200, height: 200 }}>
-          {/* Animated corner brackets */}
-          <span
-            className="qr-corner absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-white rounded-tl-lg"
-            style={{ animationDelay: '0s' }}
-          />
-          <span
-            className="qr-corner absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-white rounded-tr-lg"
-            style={{ animationDelay: '0.375s' }}
-          />
-          <span
-            className="qr-corner absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-white rounded-bl-lg"
-            style={{ animationDelay: '0.75s' }}
-          />
-          <span
-            className="qr-corner absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-white rounded-br-lg"
-            style={{ animationDelay: '1.125s' }}
-          />
-
-          {/* Inner guide border */}
+          <span className="qr-corner absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-white rounded-tl-lg" style={{ animationDelay: '0s' }} />
+          <span className="qr-corner absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-white rounded-tr-lg" style={{ animationDelay: '0.375s' }} />
+          <span className="qr-corner absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-white rounded-bl-lg" style={{ animationDelay: '0.75s' }} />
+          <span className="qr-corner absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-white rounded-br-lg" style={{ animationDelay: '1.125s' }} />
           <div className="absolute border border-zinc-800 rounded-lg" style={{ inset: 16 }} />
-
-          {/* Center content */}
           <div className="absolute inset-0 flex items-center justify-center">
             {scanState === 'success' ? (
               <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center animate-scale-in">
@@ -76,7 +68,6 @@ export default function CheckinPage() {
           <p className="text-zinc-600 text-xs mt-1">店内に設置されたQRコードにカメラを向けてください</p>
         </div>
 
-        {/* Store selector */}
         <div className="w-full">
           <label className="text-xs text-zinc-500 block mb-2 text-center">または店舗を選択してデモを実行</label>
           <select
@@ -84,7 +75,7 @@ export default function CheckinPage() {
             onChange={(e) => setSelectedStore(e.target.value)}
             className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm border border-zinc-800 focus:outline-none focus:border-zinc-600"
           >
-            {mockStores.map((store) => (
+            {stores.map((store) => (
               <option key={store.id} value={store.name}>{store.name}</option>
             ))}
           </select>
@@ -92,7 +83,7 @@ export default function CheckinPage() {
 
         <button
           onClick={handleScan}
-          disabled={scanState === 'success'}
+          disabled={scanState === 'success' || !selectedStore}
           className="w-full bg-white text-black font-semibold rounded-xl py-4 text-base disabled:opacity-60 transition-opacity"
         >
           {scanState === 'success' ? 'スキャン成功...' : 'スキャン成功（デモ）'}

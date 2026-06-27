@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import NoPhotoSheet from '@/components/NoPhotoSheet'
 
 const AVATAR_COLORS = [
   'bg-rose-500', 'bg-orange-500', 'bg-amber-500', 'bg-emerald-500',
@@ -56,6 +57,8 @@ export default function BoardPage() {
   const [myOnly, setMyOnly] = useState(false)
   const [pendingMyOnly, setPendingMyOnly] = useState(false)
 
+  const [hasPhoto, setHasPhoto] = useState(true)
+  const [showNoPhoto, setShowNoPhoto] = useState(false)
   const [messageSheet, setMessageSheet] = useState<MessageSheet | null>(null)
   const [messageText, setMessageText] = useState('')
   const [toastVisible, setToastVisible] = useState(false)
@@ -66,6 +69,10 @@ export default function BoardPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     setCurrentUserId(user?.id ?? null)
+    if (user) {
+      const { data: prof } = await supabase.from('profiles').select('photos').eq('id', user.id).single()
+      setHasPhoto((prof?.photos ?? []).length > 0)
+    }
 
     const { data: postData } = await supabase
       .from('posts')
@@ -83,6 +90,14 @@ export default function BoardPage() {
     const profileMap: Record<string, { nickname: string; birthday: string | null }> = {}
     for (const p of (profileData ?? [])) profileMap[p.id] = { nickname: p.nickname, birthday: p.birthday }
 
+    const postIds = postData.map((p: { id: string }) => p.id)
+    const { data: myLikes } = await supabase
+      .from('likes')
+      .select('post_id')
+      .eq('user_id', user?.id ?? '')
+      .in('post_id', postIds)
+    const likedSet = new Set((myLikes ?? []).map((l: { post_id: string }) => l.post_id))
+
     setPosts(postData.map((p: {
       id: string; user_id: string; content: string; likes_count: number;
       target_prefectures: string[]; created_at: string
@@ -94,28 +109,42 @@ export default function BoardPage() {
       targetPrefectures: p.target_prefectures ?? [],
       content: p.content,
       likes: p.likes_count,
-      liked: false,
+      liked: likedSet.has(p.id),
       createdAt: p.created_at,
     })))
     setLoading(false)
   }
 
   async function toggleLike(id: string) {
+    if (!currentUserId) return
     const post = posts.find(p => p.id === id)
     if (!post) return
-    const newLiked = !post.liked
-    const newLikes = newLiked ? post.likes + 1 : post.likes - 1
-    setPosts(prev => prev.map(p => p.id === id ? { ...p, liked: newLiked, likes: newLikes } : p))
     const supabase = createClient()
-    await supabase.from('posts').update({ likes_count: newLikes }).eq('id', id)
+    if (post.liked) {
+      await supabase.from('likes').delete().eq('user_id', currentUserId).eq('post_id', id)
+      await supabase.from('posts').update({ likes_count: post.likes - 1 }).eq('id', id)
+      setPosts(prev => prev.map(p => p.id === id ? { ...p, liked: false, likes: p.likes - 1 } : p))
+    } else {
+      await supabase.from('likes').insert({ user_id: currentUserId, post_id: id })
+      await supabase.from('posts').update({ likes_count: post.likes + 1 }).eq('id', id)
+      setPosts(prev => prev.map(p => p.id === id ? { ...p, liked: true, likes: p.likes + 1 } : p))
+    }
   }
 
   function openMessageSheet(postId: string, userId: string, nickname: string) {
+    if (!hasPhoto) { setShowNoPhoto(true); return }
     setMessageSheet({ postId, userId, nickname })
     setMessageText('')
   }
 
-  function sendMessage() {
+  async function sendMessage() {
+    if (!messageSheet || !messageText.trim() || !currentUserId) return
+    const supabase = createClient()
+    await supabase.from('messages').insert({
+      sender_id: currentUserId,
+      receiver_id: messageSheet.userId,
+      content: messageText.trim(),
+    })
     setMessageSheet(null)
     setMessageText('')
     setToastVisible(true)
@@ -205,6 +234,8 @@ export default function BoardPage() {
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </Link>
+
+      {showNoPhoto && <NoPhotoSheet onClose={() => setShowNoPhoto(false)} />}
 
       {toastVisible && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-zinc-800 text-white text-sm font-medium px-5 py-2.5 rounded-full shadow-lg border border-zinc-700 pointer-events-none">

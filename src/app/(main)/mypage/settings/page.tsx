@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const SETTINGS_ITEMS = [
   { label: 'ブロック済みユーザー', action: 'page' },
@@ -47,7 +48,11 @@ export default function SettingsPage() {
 
         <div className="mx-4 bg-zinc-900 rounded-2xl overflow-hidden mb-4">
           <button
-            onClick={() => alert('ログアウトします')}
+            onClick={async () => {
+              const supabase = createClient()
+              await supabase.auth.signOut()
+              window.location.href = '/login'
+            }}
             className="flex items-center justify-between w-full px-4 py-4 text-left border-b border-zinc-800"
           >
             <span className="text-sm text-red-400">ログアウト</span>

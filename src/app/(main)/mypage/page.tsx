@@ -412,7 +412,7 @@ export default function MyPage() {
           <button className="flex items-center justify-between px-4 py-4 w-full border-t border-zinc-800" onClick={async () => {
               const supabase = createClient()
               await supabase.auth.signOut()
-              router.push('/login')
+              window.location.href = '/login'
             }}>
             <span className="text-sm text-red-400">ログアウト</span>
           </button>
