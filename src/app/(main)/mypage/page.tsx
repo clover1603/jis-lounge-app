@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { mockRankingUsers } from '@/lib/mock-data'
 import { MemberRank, Gender } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 
@@ -120,9 +119,24 @@ function calcAge(birthday: string | null): number | null {
   return age
 }
 
+type RankingUser = { rank: number; nickname: string; mileage: number; memberRank: MemberRank }
+
+function calcRankFromProfile(rating: number, hours: number, gender: string): MemberRank {
+  const g = gender === 'female' ? 'female' : 'male'
+  for (const rank of ['DIAMOND', 'PLATINUM', 'GOLD', 'SILVER'] as MemberRank[]) {
+    const cond = RANK_CONDITIONS[rank]
+    if (cond.rating && rating < cond.rating) continue
+    if (hours < cond.hours[g]) continue
+    return rank
+  }
+  return 'BRONZE'
+}
+
 export default function MyPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<DbProfile | null>(null)
+  const [rankingUsers, setRankingUsers] = useState<RankingUser[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'rank' | 'badge'>('rank')
   const [showRankInfo, setShowRankInfo] = useState(false)
@@ -132,8 +146,22 @@ export default function MyPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      setCurrentUserId(user.id)
       const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(data)
+
+      const { data: topUsers } = await supabase
+        .from('profiles')
+        .select('id, nickname, mileage, rating, seating_hours, gender')
+        .order('mileage', { ascending: false })
+        .limit(10)
+      setRankingUsers((topUsers ?? []).map((u, i) => ({
+        rank: i + 1,
+        nickname: u.nickname,
+        mileage: u.mileage ?? 0,
+        memberRank: calcRankFromProfile(u.rating ?? 3.0, u.seating_hours ?? 0, u.gender ?? 'male'),
+      })))
+
       setLoading(false)
     }
     load()
@@ -386,8 +414,8 @@ export default function MyPage() {
         <div className="mx-4 mb-4">
           <h2 className="text-sm font-bold mb-3">ランキング</h2>
           <div className="bg-zinc-900 rounded-2xl overflow-hidden">
-            {mockRankingUsers.map((u) => (
-              <div key={u.rank} className={`flex items-center gap-3 px-4 py-3 border-b border-zinc-800 last:border-0 ${u.nickname === 'あなた' ? 'bg-zinc-800' : ''}`}>
+            {rankingUsers.map((u) => (
+              <div key={u.rank} className={`flex items-center gap-3 px-4 py-3 border-b border-zinc-800 last:border-0`}>
                 <span className={`text-sm font-bold w-6 text-center ${u.rank <= 3 ? 'text-yellow-400' : 'text-zinc-500'}`}>{u.rank}</span>
                 <span className="flex-1 text-sm">{u.nickname}</span>
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${RANK_BADGE_COLORS[u.memberRank]}`}>{RANK_LABELS[u.memberRank]}</span>

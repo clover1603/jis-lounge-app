@@ -1,26 +1,33 @@
 'use client'
 
-import { useState, Suspense } from 'react'
-import Link from 'next/link'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { mockMenuItems } from '@/lib/mock-data'
+import { createClient } from '@/lib/supabase/client'
 import { CartItem } from '@/lib/types'
 
 const CATEGORIES = ['フード', 'ドリンク', 'ボトル', 'シャンパン', 'その他']
 
+type MenuItem = { id: string; name: string; price: number; category: string; description: string }
+
 function OrderPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const storeName = searchParams.get('store') ?? 'J梅田'
+  const storeName = searchParams.get('store') ?? 'JIS梅田'
 
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [activeCategory, setActiveCategory] = useState('フード')
   const [cart, setCart] = useState<CartItem[]>([])
 
-  const filtered = mockMenuItems.filter((item) => item.category === activeCategory)
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('menu_items').select('*').then(({ data }) => setMenuItems(data ?? []))
+  }, [])
+
+  const filtered = menuItems.filter((item) => item.category === activeCategory)
   const totalCount = cart.reduce((sum, c) => sum + c.quantity, 0)
 
   function addToCart(id: string) {
-    const item = mockMenuItems.find((m) => m.id === id)
+    const item = menuItems.find((m) => m.id === id)
     if (!item) return
     setCart((prev) => {
       const existing = prev.find((c) => c.id === id)

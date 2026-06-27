@@ -159,7 +159,43 @@ insert into public.stores (id, name) values
 on conflict (id) do nothing;
 
 -- -------------------------------------------------------
--- 6. Storage: profile-photos バケット
+-- 6. menu_items（メニュー）
+-- -------------------------------------------------------
+create table if not exists public.menu_items (
+  id          text primary key,
+  name        text not null,
+  price       int not null,
+  category    text not null,
+  description text default ''
+);
+alter table public.menu_items enable row level security;
+create policy "全員閲覧可" on public.menu_items for select using (true);
+
+insert into public.menu_items (id, name, price, category, description) values
+  ('f1','枝豆',380,'フード','塩茹で枝豆'),
+  ('f2','フライドポテト',480,'フード','サクサクポテト'),
+  ('f3','チーズプレート',680,'フード','盛り合わせ4種'),
+  ('f4','カルパッチョ',780,'フード','本日の鮮魚'),
+  ('d1','ハイボール',550,'ドリンク','サントリー角ハイボール'),
+  ('d2','レモンサワー',550,'ドリンク','生レモン搾り'),
+  ('d3','カシスオレンジ',600,'ドリンク','カシスリキュール'),
+  ('d4','ジントニック',600,'ドリンク','Beefeaterジン'),
+  ('b1','サントリー角',5500,'ボトル','700ml'),
+  ('b2','ジャックダニエル',6500,'ボトル','700ml'),
+  ('b3','アブソルート',6000,'ボトル','700ml ウォッカ'),
+  ('ch1','モエ エ シャンドン',18000,'シャンパン','750ml'),
+  ('ch2','ヴーヴ クリコ',22000,'シャンパン','750ml イエローラベル'),
+  ('ch3','ドン ペリニヨン',55000,'シャンパン','750ml 2013年'),
+  ('o1','ソフトドリンク',300,'その他','コーラ/ジュース'),
+  ('o2','ミネラルウォーター',200,'その他','evian 500ml'),
+  ('o3','アイスクリーム',400,'その他','バニラ/チョコ'),
+  ('o4','おつまみセット',580,'その他','小腹おつまみ詰め合わせ'),
+  ('o5','コーヒー',350,'その他','ホット/アイス'),
+  ('o6','フルーツプレート',880,'その他','季節のフルーツ盛り合わせ')
+on conflict (id) do nothing;
+
+-- -------------------------------------------------------
+-- 7. Storage: profile-photos バケット
 -- -------------------------------------------------------
 -- Supabase Dashboard > Storage > New bucket
 -- Name: profile-photos / Public: ON

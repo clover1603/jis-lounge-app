@@ -2,19 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { mockMenuItems } from '@/lib/mock-data'
 import { CartItem } from '@/lib/types'
-
-const DEFAULT_CART: CartItem[] = [
-  { ...mockMenuItems[0], quantity: 2 },
-  { ...mockMenuItems[4], quantity: 1 },
-]
 
 const SERVICE_RATE = 0.1
 
 export default function CartPage() {
   const router = useRouter()
-  const [cart, setCart] = useState<CartItem[]>(DEFAULT_CART)
+  const [cart, setCart] = useState<CartItem[]>([])
   const [storeName, setStoreName] = useState('J梅田')
   const [ordered, setOrdered] = useState(false)
 

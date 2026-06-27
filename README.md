@@ -61,14 +61,8 @@ npm run dev
 | メッセージ | ✅ Supabase接続済 | ユーザー間DM |
 | 店内人数 | ✅ Supabase接続済 | 8店舗の男女人数表示 |
 | チェックイン | ✅ Supabase接続済 | QRデモ→注文画面 |
-| マイページ | ✅ Supabase接続済 | ランク・プロフィール・写真アップロード |
-
-## 残タスク（mock-data 依存）
-
-| ページ | 内容 |
-|---|---|
-| `/mypage` | `mockRankingUsers` → ランキングDBテーブル作成予定 |
-| `/order` | `mockMenuItems` → メニューDBテーブル作成予定 |
+| マイページ | ✅ Supabase接続済 | ランク・ランキング・プロフィール・写真アップロード |
+| 注文 | ✅ Supabase接続済 | menu_itemsテーブルからメニュー取得 |
 
 ## 認証・セキュリティ
 
