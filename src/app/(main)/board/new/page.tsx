@@ -125,7 +125,7 @@ export default function NewPostPage() {
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
       </div>
 
-      <div className="fixed bottom-16 left-0 right-0 px-4 pb-4 pt-3 bg-black border-t border-zinc-800">
+      <div className="fixed left-0 right-0 px-4 pb-4 pt-3 bg-black border-t border-zinc-800" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
         <button
           onClick={() => !hasPhoto ? setShowNoPhoto(true) : handleSubmit()}
           disabled={!content.trim() || submitting}

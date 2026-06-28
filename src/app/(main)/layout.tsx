@@ -28,7 +28,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="relative min-h-screen bg-black max-w-[430px] mx-auto">
-      <div className="pb-16">{children}</div>
+      <div style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>{children}</div>
       <BottomNav />
     </div>
   )

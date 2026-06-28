@@ -7,7 +7,7 @@ export default function NoPhotoSheet({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative bg-zinc-900 rounded-t-2xl p-6 z-10 border-t border-zinc-800">
+      <div className="relative bg-zinc-900 rounded-t-2xl p-6 z-10 border-t border-zinc-800" style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
         <div className="flex justify-center mb-4">
           <div className="w-14 h-14 rounded-full bg-zinc-800 flex items-center justify-center">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

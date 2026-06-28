@@ -69,7 +69,8 @@ export default function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900 border-t border-zinc-800 flex items-center justify-around h-16 max-w-[430px] mx-auto w-full">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900 border-t border-zinc-800 max-w-[430px] mx-auto w-full" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="flex items-center justify-around h-16">
       {tabs.map((tab) => {
         const active = pathname.startsWith(tab.href)
         if (tab.isCenter) {
@@ -89,6 +90,7 @@ export default function BottomNav() {
           </Link>
         )
       })}
+      </div>
     </nav>
   )
 }
