@@ -15,6 +15,7 @@ type DbProfile = {
   mileage: number
   rating: number
   seating_hours: number
+  photos: string[]
 }
 
 const RANK_COLORS: Record<MemberRank, string> = {
@@ -199,8 +200,11 @@ export default function MyPage() {
 
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 pt-6 pb-4 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-zinc-700 flex items-center justify-center text-2xl font-bold flex-shrink-0">
-            {user.nickname[0]}
+          <div className="w-16 h-16 rounded-full bg-zinc-700 flex items-center justify-center text-2xl font-bold flex-shrink-0 overflow-hidden">
+            {profile?.photos?.[0]
+              ? <img src={profile.photos[0]} alt="" className="w-full h-full object-cover" />
+              : user.nickname[0]
+            }
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-lg">{user.nickname}</p>
