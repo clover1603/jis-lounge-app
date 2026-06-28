@@ -66,7 +66,7 @@ export default function CartPage() {
         )}
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 pb-48 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ paddingBottom: 'calc(14rem + env(safe-area-inset-bottom))' }}>
         {cart.length === 0 ? (
           <div className="text-center mt-20">
             <p className="text-zinc-500 text-sm">カートは空です。</p>
@@ -120,7 +120,7 @@ export default function CartPage() {
       </div>
 
       {cart.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-zinc-800 px-4 py-4">
+        <div className="fixed left-0 right-0 bg-black border-t border-zinc-800 px-4 py-4" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <div className="space-y-2 mb-4">
             <div className="flex items-center justify-between">
               <span className="text-zinc-400 text-sm">小計</span>

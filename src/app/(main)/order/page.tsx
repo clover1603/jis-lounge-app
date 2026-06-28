@@ -129,7 +129,7 @@ function OrderPageInner() {
       </div>
 
       {totalCount > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-black border-t border-zinc-800">
+        <div className="fixed left-0 right-0 px-4 pb-4 pt-3 bg-black border-t border-zinc-800" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
           <button
             onClick={goToCart}
             className="w-full bg-white text-black font-bold rounded-xl py-4 flex items-center justify-center gap-2 text-base"

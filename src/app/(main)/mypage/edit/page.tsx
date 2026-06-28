@@ -7,6 +7,17 @@ import { createClient } from '@/lib/supabase/client'
 const MBTI_OPTIONS = ['INTJ','INTP','ENTJ','ENTP','INFJ','INFP','ENFJ','ENFP','ISTJ','ISFJ','ESTJ','ESFJ','ISTP','ISFP','ESTP','ESFP']
 const BODY_TYPES = ['細身', 'スリム', '普通', 'がっちり', 'ぽっちゃり']
 const JOBS = ['IT', '医療', '金融', '教育', '飲食', '販売', '公務員', '自営業', 'その他']
+const HOLIDAYS = ['土日', '平日', '不定期', '土曜', '日曜', '祝日']
+const PREFECTURES = [
+  '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+  '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+  '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県',
+  '岐阜県', '静岡県', '愛知県', '三重県',
+  '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県',
+  '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+  '徳島県', '香川県', '愛媛県', '高知県',
+  '福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県',
+]
 
 type ProfileForm = {
   nickname: string
@@ -19,22 +30,24 @@ type ProfileForm = {
   prefecture: string
   work_location: string
   holiday: string
-  favorite_areas: string
 }
+
+const SEL = "w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm border border-zinc-800 focus:outline-none"
 
 export default function EditProfilePage() {
   const router = useRouter()
   const [form, setForm] = useState<ProfileForm>({
     nickname: '', bio: '', mbti: '', job: '', height: '',
-    body_type: '', birthday: '', prefecture: '',
-    work_location: '', holiday: '', favorite_areas: '',
+    body_type: '', birthday: '', prefecture: '', work_location: '', holiday: '',
   })
+  const [favoriteAreas, setFavoriteAreas] = useState<string[]>([])
   const [photos, setPhotos] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { loadProfile() }, [])
@@ -47,6 +60,7 @@ export default function EditProfilePage() {
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (data) {
       setPhotos(data.photos ?? [])
+      setFavoriteAreas(data.favorite_areas ? data.favorite_areas.split(',').filter(Boolean) : [])
       setForm({
         nickname: data.nickname ?? '',
         bio: data.bio ?? '',
@@ -58,7 +72,6 @@ export default function EditProfilePage() {
         prefecture: data.prefecture ?? '',
         work_location: data.work_location ?? '',
         holiday: data.holiday ?? '',
-        favorite_areas: data.favorite_areas ?? '',
       })
     }
     setLoading(false)
@@ -66,6 +79,12 @@ export default function EditProfilePage() {
 
   function set(key: keyof ProfileForm, value: string) {
     setForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  function toggleArea(pref: string) {
+    setFavoriteAreas(prev =>
+      prev.includes(pref) ? prev.filter(p => p !== pref) : [...prev, pref]
+    )
   }
 
   async function uploadPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -95,11 +114,11 @@ export default function EditProfilePage() {
   }
 
   async function save() {
+    if (!userId) return
     setSaving(true)
+    setSaveError('')
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('profiles').update({
+    const { error } = await supabase.from('profiles').update({
       nickname: form.nickname,
       bio: form.bio,
       mbti: form.mbti,
@@ -110,11 +129,15 @@ export default function EditProfilePage() {
       prefecture: form.prefecture,
       work_location: form.work_location,
       holiday: form.holiday,
-      favorite_areas: form.favorite_areas,
-    }).eq('id', user.id)
+      favorite_areas: favoriteAreas.join(','),
+    }).eq('id', userId)
     setSaving(false)
-    setSaved(true)
-    setTimeout(() => { setSaved(false); router.back() }, 1200)
+    if (error) {
+      setSaveError(error.message)
+    } else {
+      setSaved(true)
+      setTimeout(() => { setSaved(false); router.back() }, 1200)
+    }
   }
 
   if (loading) return (
@@ -138,16 +161,16 @@ export default function EditProfilePage() {
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-24 space-y-4">
+
+        {/* 写真 */}
         <div>
           <p className="text-xs text-zinc-500 mb-2">写真（最大6枚）</p>
           <div className="grid grid-cols-3 gap-2">
             {photos.map((url) => (
               <div key={url} className="aspect-square rounded-xl overflow-hidden relative">
                 <img src={url} alt="" className="w-full h-full object-cover" />
-                <button
-                  onClick={() => removePhoto(url)}
-                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center"
-                >
+                <button onClick={() => removePhoto(url)}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
@@ -155,16 +178,11 @@ export default function EditProfilePage() {
               </div>
             ))}
             {photos.length < 6 && (
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="aspect-square bg-zinc-900 rounded-xl flex items-center justify-center border border-dashed border-zinc-700"
-              >
-                {uploading ? (
-                  <div className="w-5 h-5 border-2 border-zinc-600 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <span className="text-zinc-500 text-2xl">+</span>
-                )}
+              <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                className="aspect-square bg-zinc-900 rounded-xl flex items-center justify-center border border-dashed border-zinc-700">
+                {uploading
+                  ? <div className="w-5 h-5 border-2 border-zinc-600 border-t-white rounded-full animate-spin" />
+                  : <span className="text-zinc-500 text-2xl">+</span>}
               </button>
             )}
           </div>
@@ -182,16 +200,14 @@ export default function EditProfilePage() {
         </Field>
 
         <Field label="MBTI">
-          <select value={form.mbti} onChange={e => set('mbti', e.target.value)}
-            className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm border border-zinc-800 focus:outline-none">
+          <select value={form.mbti} onChange={e => set('mbti', e.target.value)} className={SEL}>
             <option value="">未設定</option>
             {MBTI_OPTIONS.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </Field>
 
         <Field label="職業">
-          <select value={form.job} onChange={e => set('job', e.target.value)}
-            className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm border border-zinc-800 focus:outline-none">
+          <select value={form.job} onChange={e => set('job', e.target.value)} className={SEL}>
             <option value="">未設定</option>
             {JOBS.map(j => <option key={j} value={j}>{j}</option>)}
           </select>
@@ -203,8 +219,7 @@ export default function EditProfilePage() {
         </Field>
 
         <Field label="体型">
-          <select value={form.body_type} onChange={e => set('body_type', e.target.value)}
-            className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm border border-zinc-800 focus:outline-none">
+          <select value={form.body_type} onChange={e => set('body_type', e.target.value)} className={SEL}>
             <option value="">未設定</option>
             {BODY_TYPES.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
@@ -216,24 +231,43 @@ export default function EditProfilePage() {
         </Field>
 
         <Field label="居住地">
-          <input type="text" value={form.prefecture} onChange={e => set('prefecture', e.target.value)} placeholder="例: 東京都"
-            className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm border border-zinc-800 focus:outline-none focus:border-zinc-600 placeholder:text-zinc-600" />
+          <select value={form.prefecture} onChange={e => set('prefecture', e.target.value)} className={SEL}>
+            <option value="">未設定</option>
+            {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
         </Field>
 
         <Field label="勤務地">
-          <input type="text" value={form.work_location} onChange={e => set('work_location', e.target.value)} placeholder="未設定"
-            className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm border border-zinc-800 focus:outline-none focus:border-zinc-600 placeholder:text-zinc-600" />
+          <select value={form.work_location} onChange={e => set('work_location', e.target.value)} className={SEL}>
+            <option value="">未設定</option>
+            {PREFECTURES.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
         </Field>
 
         <Field label="休日">
-          <input type="text" value={form.holiday} onChange={e => set('holiday', e.target.value)} placeholder="土日 / 平日 / 不定"
-            className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm border border-zinc-800 focus:outline-none focus:border-zinc-600 placeholder:text-zinc-600" />
+          <select value={form.holiday} onChange={e => set('holiday', e.target.value)} className={SEL}>
+            <option value="">未設定</option>
+            {HOLIDAYS.map(h => <option key={h} value={h}>{h}</option>)}
+          </select>
         </Field>
 
-        <Field label="お気に入り地域">
-          <input type="text" value={form.favorite_areas} onChange={e => set('favorite_areas', e.target.value)} placeholder="例: 東京都, 大阪府"
-            className="w-full bg-zinc-900 text-white rounded-xl px-4 py-3 text-sm border border-zinc-800 focus:outline-none focus:border-zinc-600 placeholder:text-zinc-600" />
+        <Field label="お気に入り地域（複数選択可）">
+          <div className="flex flex-wrap gap-2">
+            {PREFECTURES.map(p => {
+              const on = favoriteAreas.includes(p)
+              return (
+                <button key={p} type="button" onClick={() => toggleArea(p)}
+                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                    on ? 'bg-white text-black border-white' : 'bg-transparent text-zinc-400 border-zinc-700'
+                  }`}>
+                  {p}
+                </button>
+              )
+            })}
+          </div>
         </Field>
+
+        {saveError && <p className="text-red-500 text-xs text-center">{saveError}</p>}
       </div>
     </div>
   )
