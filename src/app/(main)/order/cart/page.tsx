@@ -47,6 +47,12 @@ export default function CartPage() {
   function confirm() {
     setOrdered(true)
     if (typeof window !== 'undefined') {
+      const session = localStorage.getItem('active_checkin')
+      if (session) {
+        const s = JSON.parse(session)
+        s.totalAmount = (s.totalAmount ?? 0) + total
+        localStorage.setItem('active_checkin', JSON.stringify(s))
+      }
       sessionStorage.removeItem('cart')
       sessionStorage.removeItem('storeName')
     }

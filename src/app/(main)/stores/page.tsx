@@ -11,10 +11,22 @@ type Store = {
   isFavorite: boolean
 }
 
+const STORE_INFO_IDS: Record<string, number> = {
+  FUKUOKA:  1,
+  SAPPORO:  2,
+  NAMBA:    3,
+  KUMAMOTO: 5,
+  UMEDA:    9,
+  NSHINJUKU: 11,
+  SHINJUKU: 12,
+  CHAYA:    13,
+}
+
 export default function StoresPage() {
   const [stores, setStores] = useState<Store[]>([])
   const [favorites, setFavorites] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [infoStore, setInfoStore] = useState<Store | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem('store_favorites')
@@ -24,15 +36,13 @@ export default function StoresPage() {
 
   async function loadStores() {
     const supabase = createClient()
-    const { data } = await supabase
-      .from('stores')
-      .select('id, name, mens_count, womens_count')
-      .order('name')
+    const { data } = await supabase.from('stores').select('id, name, mens_count, womens_count').order('name')
     setStores((data ?? []).map((s: Omit<Store, 'isFavorite'>) => ({ ...s, isFavorite: false })))
     setLoading(false)
   }
 
-  function toggleFavorite(id: string) {
+  function toggleFavorite(e: React.MouseEvent, id: string) {
+    e.stopPropagation()
     setFavorites(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
@@ -45,6 +55,9 @@ export default function StoresPage() {
     .map(s => ({ ...s, isFavorite: favorites.has(s.id) }))
     .sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite))
 
+  const infoId = infoStore ? STORE_INFO_IDS[infoStore.id] : null
+  const infoUrl = infoId ? `http://jisjis.com/info/ipadinfo/${infoId}/index.html` : null
+
   return (
     <div className="flex flex-col min-h-screen bg-black">
       <header className="sticky top-0 z-40 bg-black border-b border-zinc-800 flex items-center px-4 h-14">
@@ -55,8 +68,12 @@ export default function StoresPage() {
         {loading && <p className="text-center text-zinc-500 mt-16">読み込み中...</p>}
         <div className="grid grid-cols-2 gap-3">
           {sorted.map((store) => (
-            <div key={store.id} className="bg-zinc-900 rounded-2xl p-4 relative">
-              <button onClick={() => toggleFavorite(store.id)} className="absolute top-3 right-3 p-0.5">
+            <div
+              key={store.id}
+              onClick={() => setInfoStore(store)}
+              className="bg-zinc-900 rounded-2xl p-4 relative cursor-pointer active:opacity-80"
+            >
+              <button onClick={e => toggleFavorite(e, store.id)} className="absolute top-3 right-3 p-0.5">
                 <svg width="18" height="18" viewBox="0 0 24 24"
                   fill={store.isFavorite ? '#fbbf24' : 'none'}
                   stroke={store.isFavorite ? '#fbbf24' : '#52525b'}
@@ -92,6 +109,35 @@ export default function StoresPage() {
           ))}
         </div>
       </div>
+
+      {/* 店舗情報 bottom sheet */}
+      {infoStore && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setInfoStore(null)} />
+          <div className="relative bg-zinc-950 rounded-t-2xl z-10 border-t border-zinc-800 flex flex-col"
+            style={{ height: '80vh' }}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 flex-shrink-0">
+              <h2 className="font-bold text-base">{infoStore.name}</h2>
+              <button onClick={() => setInfoStore(null)} className="p-1 text-zinc-400">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            {infoUrl ? (
+              <iframe
+                src={infoUrl}
+                className="flex-1 w-full border-none bg-white"
+                title={infoStore.name}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-zinc-500 text-sm">
+                この店舗の情報ページはありません
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
