@@ -56,7 +56,7 @@ export default function StoresPage() {
     .sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite))
 
   const infoId = infoStore ? STORE_INFO_IDS[infoStore.id] : null
-  const infoUrl = infoId ? `http://jisjis.com/info/ipadinfo/${infoId}/index.html` : null
+  const infoUrl = infoId ? `https://jisjis.com/info/ipadinfo/${infoId}/index.html` : null
 
   return (
     <div className="flex flex-col min-h-screen bg-black">
