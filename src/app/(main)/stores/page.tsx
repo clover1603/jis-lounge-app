@@ -50,11 +50,6 @@ export default function StoresPage() {
     })
   }
 
-  function openInfo(store: Store) {
-    const infoId = STORE_INFO_IDS[store.id]
-    if (infoId) window.open(`https://jisjis.com/info/ipadinfo/${infoId}/index.html`, '_blank')
-  }
-
   const sorted = [...stores]
     .map(s => ({ ...s, isFavorite: favorites.has(s.id) }))
     .sort((a, b) => Number(b.isFavorite) - Number(a.isFavorite))
@@ -68,11 +63,13 @@ export default function StoresPage() {
       <div className="flex-1 overflow-y-auto p-4 pb-20">
         {loading && <p className="text-center text-zinc-500 mt-16">読み込み中...</p>}
         <div className="grid grid-cols-2 gap-3">
-          {sorted.map((store) => (
+          {sorted.map((store) => {
+            const infoId = STORE_INFO_IDS[store.id]
+            const infoUrl = infoId ? `https://jisjis.com/info/ipadinfo/${infoId}/index.html` : null
+            return (
             <div
               key={store.id}
-              onClick={() => openInfo(store)}
-              className="bg-zinc-900 rounded-2xl p-4 relative cursor-pointer active:opacity-80"
+              className="bg-zinc-900 rounded-2xl p-4 relative"
             >
               <button onClick={e => toggleFavorite(e, store.id)} className="absolute top-3 right-3 p-0.5">
                 <svg width="18" height="18" viewBox="0 0 24 24"
@@ -106,8 +103,20 @@ export default function StoresPage() {
                   <span className="text-xs text-zinc-400 font-normal ml-0.5">人</span>
                 </span>
               </div>
+              {infoUrl && (
+                <a
+                  href={infoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="mt-2 block text-center text-xs text-zinc-500 py-1.5 rounded-lg bg-zinc-800 active:opacity-70"
+                >
+                  情報を見る →
+                </a>
+              )}
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
