@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { calcAgeJST } from '@/lib/utils/age'
+import { registerAction } from './actions'
 
 export default function RegisterPage() {
   const [nickname, setNickname] = useState('')
@@ -13,24 +14,31 @@ export default function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const isUnder20 = birthday !== '' && calcAgeJST(birthday) < 20
+  const canSubmit = !loading && !isUnder20
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault()
     if (!gender) { setError('性別を選択してください'); return }
+    if (isUnder20) { setError('20歳未満の方はご利用いただけません。'); return }
+
     setLoading(true)
     setError('')
-    const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+
+    const result = await registerAction({
+      nickname,
       email,
       password,
-      options: {
-        data: { nickname, birthday: birthday || null, gender },
-      },
+      birthday,
+      gender,
     })
-    if (error) {
-      setError(error.message || 'エラーが発生しました')
+
+    if (result.error) {
+      setError(result.error)
       setLoading(false)
       return
     }
+
     window.location.href = '/board'
   }
 
@@ -87,14 +95,19 @@ export default function RegisterPage() {
             <input
               type="date"
               value={birthday}
-              onChange={e => setBirthday(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-zinc-400"
+              onChange={e => { setBirthday(e.target.value); setError('') }}
+              className={`w-full bg-zinc-900 rounded-xl px-4 py-3 text-white focus:outline-none border ${
+                isUnder20 ? 'border-red-500' : 'border-zinc-700 focus:border-zinc-400'
+              }`}
             />
+            {isUnder20 && (
+              <p className="text-red-500 text-sm mt-1">20歳未満の方はご利用いただけません。</p>
+            )}
           </div>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <button
             type="submit"
-            disabled={loading}
+            disabled={!canSubmit}
             className="w-full bg-white text-black font-bold py-3 rounded-xl disabled:opacity-50"
           >
             {loading ? '登録中...' : 'アカウントを作成'}
