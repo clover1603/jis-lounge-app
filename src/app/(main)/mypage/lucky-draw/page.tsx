@@ -35,6 +35,13 @@ const HEART_COLOR: Record<string, string> = {
   rare:   '#a855f7',
   legend: '#fbbf24',
 }
+// 3段階カラー変化: 白 → 中間 → フルレアリティ
+const HEART_MID_COLOR: Record<string, string> = {
+  miss:   '#e5e7eb',
+  normal: '#fbcfe8',
+  rare:   '#c4b5fd',
+  legend: '#fde68a',
+}
 const HEART_GLOW: Record<string, string> = {
   miss:   'rgba(209,213,219,0.3)',
   normal: 'rgba(244,114,182,0.5)',
@@ -68,7 +75,11 @@ const RARITY_BADGE: Record<string, string> = {
 function HeartSVG({ color, size = 48, glow = '' }: { color: string; size?: number; glow?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ filter: glow ? `drop-shadow(0 0 12px ${glow})` : undefined }}>
-      <path d="M50 85 C50 85 10 55 10 30 C10 15 20 5 35 5 C42 5 48 10 50 15 C52 10 58 5 65 5 C80 5 90 15 90 30 C90 55 50 85 50 85Z" fill={color} />
+      <path
+        d="M50 85 C50 85 10 55 10 30 C10 15 20 5 35 5 C42 5 48 10 50 15 C52 10 58 5 65 5 C80 5 90 15 90 30 C90 55 50 85 50 85Z"
+        fill={color}
+        style={{ transition: 'fill 0.65s ease-in-out' }}
+      />
     </svg>
   )
 }
@@ -103,52 +114,259 @@ function SilhouetteSVG({ type, height = 120, opacity = 1 }: { type: 'male'|'fema
   )
 }
 
-// Lounge door: two panels + arch
-// 蝶番を軸に scaleX で奥へ開くように表現（左パネル=左蝶番、右パネル=右蝶番）
-function DoorSVG({ openAngle }: { openAngle: number }) {
-  // openAngle 0=closed, 1=fully open
-  // scaleX: 1→ほぼ0 に縮む（奥へ開く遠近感）
-  const scale = Math.max(0.02, 1 - openAngle)
-  // 奥から差し込む環境光
-  const glowOpacity = openAngle * 0.12
+// ─── 木製彫刻扉 ───────────────────────────────────────────────────
+
+const WD = '#3A1608'  // 最暗部・影
+const WB = '#6B3015'  // 基本木色
+const WM = '#8B4A20'  // 中間
+const WL = '#A85C2A'  // 明るめ
+const WH = '#C87535'  // ハイライト
+const GD = '#7A5C00'  // 金・影
+const GB = '#B8860B'  // 金・基本
+const GL = '#DAA520'  // 金・明
+const GH = '#FFD700'  // 金・最明
+
+function CarvedPanel({ x, y, w, h, children }: {
+  x: number; y: number; w: number; h: number; children?: React.ReactNode
+}) {
   return (
-    <svg width="260" height="340" viewBox="0 0 260 340" fill="none" overflow="visible">
-      {/* 奥の光 */}
-      <ellipse cx={130} cy={210} rx={110 * openAngle} ry={130 * openAngle}
-        fill="#d97706" fillOpacity={glowOpacity} />
+    <g>
+      <rect x={x}   y={y}   width={w}   height={h}   rx={5} fill={WD} />
+      <rect x={x+3} y={y+3} width={w-6} height={h-6} rx={4} fill="#1E0803" />
+      <rect x={x+8} y={y+8} width={w-16} height={h-16} rx={3} fill={WM} />
+      <rect x={x+8}    y={y+8}    width={w-16} height={3}    rx={1} fill={WH} fillOpacity={0.35} />
+      <rect x={x+8}    y={y+8}    width={3}    height={h-16} rx={1} fill={WH} fillOpacity={0.2} />
+      <rect x={x+8}    y={y+h-16} width={w-16} height={3}    rx={1} fill={WD} fillOpacity={0.5} />
+      <rect x={x+w-11} y={y+8}    width={3}    height={h-16} rx={1} fill={WD} fillOpacity={0.4} />
+      {children}
+    </g>
+  )
+}
 
-      {/* アーチ枠 */}
-      <path d="M10 340 L10 82 Q130 2 250 82 L250 340Z"
-        stroke="#3f3f46" strokeWidth="6" fill="#09090b" />
+function Knocker({ cx, cy }: { cx: number; cy: number }) {
+  return (
+    <g>
+      <ellipse cx={cx} cy={cy-8} rx={22} ry={26} fill={GD} />
+      <ellipse cx={cx} cy={cy-8} rx={20} ry={24} fill={GB} />
+      <ellipse cx={cx} cy={cy-8} rx={17} ry={20} fill={GL} />
+      {/* ライオン顔 */}
+      <circle cx={cx} cy={cy-12} r={10} fill={GB} />
+      <circle cx={cx} cy={cy-12} r={7}  fill={GL} />
+      <circle cx={cx-3} cy={cy-15} r={2}  fill={GD} />
+      <circle cx={cx+3} cy={cy-15} r={2}  fill={GD} />
+      <ellipse cx={cx} cy={cy-10} rx={9} ry={5} fill={GB} fillOpacity={0.5} />
+      <path d={`M${cx-4} ${cy-9} Q${cx} ${cy-6} ${cx+4} ${cy-9}`} stroke={GD} strokeWidth={1.5} fill="none" />
+      {/* リング */}
+      <circle cx={cx} cy={cy+14} r={15} fill="none" stroke={GD} strokeWidth={7} />
+      <circle cx={cx} cy={cy+14} r={15} fill="none" stroke={GL} strokeWidth={4.5} />
+      <circle cx={cx} cy={cy+14} r={15} fill="none" stroke={GH} strokeWidth={1.5} />
+      {/* リング下部の止め具 */}
+      <ellipse cx={cx} cy={cy-1} rx={5} ry={4} fill={GL} />
+    </g>
+  )
+}
 
-      {/* 左パネル — 左端（x=14）が蝶番。scaleX で右へ潰れる */}
-      <g style={{
-        transformOrigin: '14px 211px',
-        transform: `scaleX(${scale})`,
-      }}>
-        <rect x={14} y={84} width={116} height={250} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
-        {/* 鏡面ハイライト */}
-        <rect x={18} y={88} width={4} height={238} rx={2} fill="#27272a" opacity={0.6} />
-        <rect x={24} y={94} width={98} height={106} rx={2} fill="#27272a" />
-        <rect x={24} y={208} width={98} height={116} rx={2} fill="#27272a" />
-        <circle cx={124} cy={210} r={5} fill="#52525b" />
+// 鳥の彫刻（羽を広げた鳥シルエット）
+function BirdCarving({ cx, cy, flip }: { cx: number; cy: number; flip?: boolean }) {
+  const s = flip ? -1 : 1
+  return (
+    <g transform={`translate(${cx} ${cy}) scale(${s} 1)`}>
+      {/* 翼 */}
+      <path d="M0 0 Q-18 -14 -35 -6 Q-22 2 -8 0Z" fill={WD} fillOpacity={0.55} />
+      <path d="M0 0 Q-15 -8 -28 2 Q-16 8 -6 4Z"   fill={WD} fillOpacity={0.4} />
+      {/* 胴体 */}
+      <ellipse cx={4} cy={0} rx={7} ry={5} fill={WD} fillOpacity={0.6} />
+      {/* 尾羽 */}
+      <path d="M8 2 Q18 6 16 14 Q10 10 8 2Z" fill={WD} fillOpacity={0.5} />
+      {/* 頭 */}
+      <circle cx={-1} cy={-6} r={4} fill={WD} fillOpacity={0.6} />
+      {/* くちばし */}
+      <path d="M-3 -7 L-8 -9 L-4 -5Z" fill={WD} fillOpacity={0.5} />
+    </g>
+  )
+}
+
+// 花紋彫刻
+function FloralCarving({ cx, cy }: { cx: number; cy: number }) {
+  return (
+    <g>
+      {[0,45,90,135,180,225,270,315].map((a, i) => {
+        const r = (a * Math.PI) / 180
+        const ex = cx + Math.cos(r) * 22
+        const ey = cy + Math.sin(r) * 22
+        return <ellipse key={i} cx={ex} cy={ey} rx={11} ry={6}
+          transform={`rotate(${a} ${ex} ${ey})`} fill={WD} fillOpacity={0.4} />
+      })}
+      {[0,60,120,180,240,300].map((a, i) => {
+        const r = (a * Math.PI) / 180
+        const ex = cx + Math.cos(r) * 11
+        const ey = cy + Math.sin(r) * 11
+        return <circle key={i} cx={ex} cy={ey} r={4} fill={WH} fillOpacity={0.2} />
+      })}
+      <circle cx={cx} cy={cy} r={10} fill={WD} fillOpacity={0.45} />
+      <circle cx={cx} cy={cy} r={6}  fill={WH} fillOpacity={0.2} />
+    </g>
+  )
+}
+
+// 象の彫刻
+function ElephantCarving({ cx, cy }: { cx: number; cy: number }) {
+  return (
+    <g>
+      <ellipse cx={cx}    cy={cy+10} rx={28} ry={20} fill={WD} fillOpacity={0.5} />
+      <circle  cx={cx}    cy={cy-10} r={17}           fill={WD} fillOpacity={0.5} />
+      <ellipse cx={cx+18} cy={cy-6}  rx={11} ry={15}  fill={WD} fillOpacity={0.35} />
+      <path d={`M${cx-8} ${cy-2} Q${cx-22} ${cy+14} ${cx-16} ${cy+30}`}
+        stroke={WD} strokeWidth={8} strokeOpacity={0.45} fill="none" strokeLinecap="round" />
+      <path d={`M${cx+6} ${cy-4} Q${cx+24} ${cy} ${cx+26} ${cy+16}`}
+        stroke={GL} strokeWidth={3} strokeOpacity={0.55} fill="none" strokeLinecap="round" />
+      {[-18,-6,6,18].map((dx, i) => (
+        <rect key={i} x={cx+dx-5} y={cy+28} width={9} height={16} rx={4} fill={WD} fillOpacity={0.45} />
+      ))}
+    </g>
+  )
+}
+
+// ダイヤ格子紋
+function DiamondPattern({ cx, cy }: { cx: number; cy: number }) {
+  return (
+    <g>
+      {[-2,-1,0,1,2].flatMap(col => [-1,0,1].map(row => {
+        const bx = cx + col * 28
+        const by = cy + row * 22
+        return <path key={`${col},${row}`}
+          d={`M${bx} ${by-9} L${bx+11} ${by} L${bx} ${by+9} L${bx-11} ${by}Z`}
+          fill={WD} fillOpacity={0.35} />
+      }))}
+    </g>
+  )
+}
+
+// 扉1枚分
+function DoorLeaf({ lx, hingeRight }: { lx: number; hingeRight: boolean }) {
+  const LW = 183
+  const cx = lx + LW / 2
+
+  return (
+    <g>
+      {/* 基本木地 */}
+      <rect x={lx} y={0} width={LW} height={760} fill={WB} />
+      {/* 木目縦線 */}
+      {[20,36,55,74,90,108,125,142,160,175].map((xo, i) => (
+        <rect key={i} x={lx+xo} y={0} width={2} height={760} fill={WH} fillOpacity={0.04+0.015*(i%3)} />
+      ))}
+      {/* 蝶番側ハイライト */}
+      <rect x={hingeRight ? lx+LW-10 : lx} y={0} width={10} height={760} fill={WH} fillOpacity={0.12} />
+      {/* 合わせ面シャドウ */}
+      <rect x={hingeRight ? lx : lx+LW-7} y={0} width={7} height={760} fill={WD} fillOpacity={0.5} />
+
+      {/* ─ 彫刻パネル ─ */}
+
+      {/* 1: 鳥パネル（上） */}
+      <CarvedPanel x={lx+10} y={12} w={LW-20} h={110}>
+        <BirdCarving cx={cx-24} cy={67} />
+        <BirdCarving cx={cx+24} cy={67} flip />
+        <circle cx={cx} cy={57} r={12} fill={WD} fillOpacity={0.35} />
+        <circle cx={cx} cy={57} r={7}  fill={WH} fillOpacity={0.18} />
+        {[0,90,180,270].map(a => {
+          const r = a*Math.PI/180
+          return <circle key={a} cx={cx+Math.cos(r)*12} cy={57+Math.sin(r)*12} r={3} fill={WH} fillOpacity={0.2} />
+        })}
+      </CarvedPanel>
+
+      {/* 2: 花紋パネル */}
+      <CarvedPanel x={lx+10} y={130} w={LW-20} h={96}>
+        <FloralCarving cx={cx} cy={178} />
+      </CarvedPanel>
+
+      {/* 3: ノッカーパネル */}
+      <CarvedPanel x={lx+10} y={234} w={LW-20} h={148}>
+        <Knocker cx={cx} cy={318} />
+        {/* 上下装飾ライン */}
+        <rect x={cx-30} y={248} width={60} height={4} rx={2} fill={WD} fillOpacity={0.35} />
+        <rect x={cx-30} y={372} width={60} height={4} rx={2} fill={WD} fillOpacity={0.35} />
+      </CarvedPanel>
+
+      {/* 4: 象パネル */}
+      <CarvedPanel x={lx+10} y={390} w={LW-20} h={118}>
+        <ElephantCarving cx={cx} cy={447} />
+      </CarvedPanel>
+
+      {/* 5: 花紋パネル */}
+      <CarvedPanel x={lx+10} y={516} w={LW-20} h={106}>
+        <FloralCarving cx={cx} cy={569} />
+      </CarvedPanel>
+
+      {/* 6: 底面ダイヤ格子 */}
+      <CarvedPanel x={lx+10} y={630} w={LW-20} h={118}>
+        <DiamondPattern cx={cx} cy={689} />
+      </CarvedPanel>
+    </g>
+  )
+}
+
+// 彫刻木製観音開き扉（画面いっぱい）
+function DoorSVG({ openAngle }: { openAngle: number }) {
+  const scale = Math.max(0.015, 1 - openAngle)
+  return (
+    <svg className="w-full h-full" viewBox="0 0 390 760" preserveAspectRatio="xMidYMid slice" fill="none">
+      <defs>
+        <linearGradient id="woodSheen" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%"   stopColor={WD}  stopOpacity="0.35" />
+          <stop offset="40%"  stopColor={WH}   stopOpacity="0.06" />
+          <stop offset="60%"  stopColor={WH}   stopOpacity="0.06" />
+          <stop offset="100%" stopColor={WD}  stopOpacity="0.35" />
+        </linearGradient>
+      </defs>
+
+      {/* 奥の暗闇（扉が開いたとき見える） */}
+      <rect x={0} y={0} width={390} height={760} fill="#030303" />
+      {/* 差し込む暖かい光 */}
+      {openAngle > 0.05 && (
+        <ellipse cx={195} cy={380} rx={180 * openAngle} ry={340 * openAngle}
+          fill="#b45309" fillOpacity={openAngle * 0.18} />
+      )}
+
+      {/* 外枠装飾（額縁） */}
+      <rect x={0}   y={0}   width={390} height={760} fill="#2A1005" />
+      {/* 縦柱 */}
+      <rect x={0}   y={0}   width={11}  height={760} fill={WD} />
+      <rect x={379} y={0}   width={11}  height={760} fill={WD} />
+      {/* 中央仕切り */}
+      <rect x={190} y={0}   width={10}  height={760} fill={WD} />
+      <rect x={192} y={0}   width={6}   height={760} fill={WB} fillOpacity={0.3} />
+      {/* 上下横桟 */}
+      <rect x={0}   y={0}   width={390} height={10}  fill={WD} />
+      <rect x={0}   y={750} width={390} height={10}  fill={WD} />
+      {/* 枠内の縦装飾ライン */}
+      {[14,18,372,376].map((x,i) => (
+        <rect key={i} x={x} y={10} width={2} height={740} fill={WH} fillOpacity={0.12} />
+      ))}
+      {/* 上下の彫刻ドット装飾 */}
+      {[30,65,100,135,165,200,225,260,295,330,360].map((x,i) => (
+        <g key={i}>
+          <circle cx={x} cy={5}   r={3} fill={WH} fillOpacity={0.25} />
+          <circle cx={x} cy={755} r={3} fill={WH} fillOpacity={0.25} />
+        </g>
+      ))}
+      {[40,100,160,220,290,360,430,500,570,640,710].map((y,i) => (
+        <g key={i}>
+          <circle cx={5}   cy={y} r={3} fill={WH} fillOpacity={0.2} />
+          <circle cx={385} cy={y} r={3} fill={WH} fillOpacity={0.2} />
+        </g>
+      ))}
+
+      {/* 左扉葉 — 左端(x=11)が蝶番 */}
+      <g style={{ transformOrigin: '11px 380px', transform: `scaleX(${scale})` }}>
+        <DoorLeaf lx={11} hingeRight={false} />
+        <rect x={11} y={0} width={179} height={760} fill="url(#woodSheen)" />
       </g>
 
-      {/* 右パネル — 右端（x=246）が蝶番。scaleX で左へ潰れる */}
-      <g style={{
-        transformOrigin: '246px 211px',
-        transform: `scaleX(${scale})`,
-      }}>
-        <rect x={130} y={84} width={116} height={250} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
-        <rect x={238} y={88} width={4} height={238} rx={2} fill="#27272a" opacity={0.6} />
-        <rect x={138} y={94} width={98} height={106} rx={2} fill="#27272a" />
-        <rect x={138} y={208} width={98} height={116} rx={2} fill="#27272a" />
-        <circle cx={136} cy={210} r={5} fill="#52525b" />
+      {/* 右扉葉 — 右端(x=379)が蝶番 */}
+      <g style={{ transformOrigin: '379px 380px', transform: `scaleX(${scale})` }}>
+        <DoorLeaf lx={200} hingeRight={true} />
+        <rect x={200} y={0} width={179} height={760} fill="url(#woodSheen)" />
       </g>
-
-      {/* JIS サイン */}
-      <rect x={100} y={22} width={60} height={22} rx={4} fill="#1c1c1e" stroke="#3f3f46" strokeWidth={1} />
-      <text x={130} y={37} textAnchor="middle" fill="#a16207" fontSize={11} fontWeight="bold" fontFamily="serif">JIS</text>
     </svg>
   )
 }
@@ -397,10 +615,20 @@ function DrawAnimation({
   const [doorAngle, setDoorAngle] = useState(0)
   const [showChampagne, setShowChampagne] = useState(false)
   const [flash, setFlash] = useState(false)
+  const [heartDisplayColor, setHeartDisplayColor] = useState('#ffffff')
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const steps = shortMode ? STEPS_SHORT : STEPS_STD
   const hColor = HEART_COLOR[rarity]
   const hGlow  = HEART_GLOW[rarity]
+
+  // ハート出現時: 白 → 中間色 → フルレアリティ の3段階
+  useEffect(() => {
+    if (step !== 5) return
+    setHeartDisplayColor('#ffffff')
+    const t1 = setTimeout(() => setHeartDisplayColor(HEART_MID_COLOR[rarity] ?? hColor), shortMode ? 300 : 700)
+    const t2 = setTimeout(() => setHeartDisplayColor(hColor),                              shortMode ? 600 : 1400)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, [step, rarity, hColor, shortMode])
 
   useEffect(() => {
     if (reduced) { onComplete(); return }
@@ -460,11 +688,12 @@ function DrawAnimation({
       >
         {/* ambient bar light */}
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 60% 30% at 50% 65%, rgba(161,103,27,0.08) 0%, transparent 70%)' }} />
-        <div style={{ marginTop: -40 }}>
+        <div className="absolute inset-0">
           <DoorSVG openAngle={doorAngle} />
         </div>
         {/* "JIS Lounge" floor text */}
         <p style={{
+          position: 'relative', zIndex: 2,
           opacity: doorAngle > 0.3 ? Math.min(1, (doorAngle - 0.3) / 0.4) : 0,
           transition: 'opacity 0.3s',
           color: '#52525b',
@@ -550,7 +779,7 @@ function DrawAnimation({
             marginBottom: 40,
           }}
         >
-          <HeartSVG color={hColor} size={step >= 6 ? 80 : 64} glow={hGlow} />
+          <HeartSVG color={heartDisplayColor} size={step >= 6 ? 80 : 64} glow={hGlow} />
         </div>
 
         {rarity === 'legend' && (
@@ -574,7 +803,7 @@ function DrawAnimation({
           animation: step >= 6 && !reduced ? 'heartZoom 1.0s cubic-bezier(0.23,1,0.32,1) both' : 'none',
           filter: `drop-shadow(0 0 40px ${hGlow})`,
         }}>
-          <HeartSVG color={hColor} size={step >= 7 ? 200 : 120} glow={hGlow} />
+          <HeartSVG color={heartDisplayColor} size={step >= 7 ? 200 : 120} glow={hGlow} />
         </div>
 
         {rarity === 'legend' && step >= 6 && (
