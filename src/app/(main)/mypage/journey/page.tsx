@@ -97,8 +97,7 @@ export default function JourneyPage() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <h1 className="text-base font-bold">Journey</h1>
-        <span className="ml-2 text-xs text-zinc-500">体験の記録</span>
+        <h1 className="text-base font-bold">今月のミッション</h1>
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">

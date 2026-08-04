@@ -245,7 +245,7 @@ export default function MyPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Journey</p>
+                <p className="text-sm font-semibold text-white">今月のミッション</p>
                 <p className="text-xs text-zinc-500 mt-0.5">
                   今月 {MOCK_JOURNEY.totalVisitsThisMonth}回来店 · {MOCK_JOURNEY.monthlyMissions.filter(m => m.completed).length}/{MOCK_JOURNEY.monthlyMissions.length} 達成
                 </p>
