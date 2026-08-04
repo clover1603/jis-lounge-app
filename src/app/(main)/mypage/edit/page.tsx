@@ -110,7 +110,8 @@ export default function EditProfilePage() {
     setSaving(true)
     setSaveError('')
     const supabase = createClient()
-    const { error } = await supabase.from('profiles').update({
+    const { error } = await supabase.from('profiles').upsert({
+      id: userId,
       nickname: form.nickname,
       bio: form.bio,
       mbti: form.mbti,
@@ -121,7 +122,7 @@ export default function EditProfilePage() {
       prefecture: form.prefecture,
       work_location: form.work_location,
       holiday: form.holiday,
-    }).eq('id', userId)
+    }, { onConflict: 'id' })
     setSaving(false)
     if (error) {
       setSaveError(error.message)
