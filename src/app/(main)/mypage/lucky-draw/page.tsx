@@ -643,7 +643,7 @@ export default function LuckyDrawPage() {
     setPhase('idle'); setResults([])
   }, [])
 
-  function devAddTickets() { if (!state) return; const n = { ...state, tickets: state.tickets + 5 }; saveState(n); setState(n) }
+  function devAddTickets(amount = 5) { if (!state) return; const n = { ...state, tickets: state.tickets + amount }; saveState(n); setState(n) }
   function devAddJileage() { if (!state) return; const n = { ...state, jileage: state.jileage + 5000 }; saveState(n); setState(n) }
   function devReset() {
     if (typeof window === 'undefined') return
@@ -935,7 +935,8 @@ export default function LuckyDrawPage() {
               ))}
             </div>
             <div className="flex flex-wrap gap-2">
-              <button onClick={devAddTickets} className="text-xs bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg hover:bg-zinc-700">チケット +5</button>
+              <button onClick={() => devAddTickets(100)} className="text-xs bg-amber-800 text-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-700 font-bold">チケット +100</button>
+              <button onClick={() => devAddTickets(5)} className="text-xs bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg hover:bg-zinc-700">チケット +5</button>
               <button onClick={devAddJileage} className="text-xs bg-zinc-800 text-zinc-300 px-3 py-1.5 rounded-lg hover:bg-zinc-700">Jレージ +5000</button>
               <button onClick={devReset} className="text-xs bg-red-950 text-red-400 px-3 py-1.5 rounded-lg hover:bg-red-900">localStorage初期化</button>
             </div>
