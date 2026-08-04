@@ -40,7 +40,6 @@ export default function EditProfilePage() {
     nickname: '', bio: '', mbti: '', job: '', height: '',
     body_type: '', birthday: '', prefecture: '', work_location: '', holiday: '',
   })
-  const [favoriteAreas, setFavoriteAreas] = useState<string[]>([])
   const [photos, setPhotos] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
@@ -60,7 +59,6 @@ export default function EditProfilePage() {
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (data) {
       setPhotos(data.photos ?? [])
-      setFavoriteAreas(data.favorite_areas ? data.favorite_areas.split(',').filter(Boolean) : [])
       setForm({
         nickname: data.nickname ?? '',
         bio: data.bio ?? '',
@@ -79,12 +77,6 @@ export default function EditProfilePage() {
 
   function set(key: keyof ProfileForm, value: string) {
     setForm(prev => ({ ...prev, [key]: value }))
-  }
-
-  function toggleArea(pref: string) {
-    setFavoriteAreas(prev =>
-      prev.includes(pref) ? prev.filter(p => p !== pref) : [...prev, pref]
-    )
   }
 
   async function uploadPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -129,7 +121,6 @@ export default function EditProfilePage() {
       prefecture: form.prefecture,
       work_location: form.work_location,
       holiday: form.holiday,
-      favorite_areas: favoriteAreas.join(','),
     }).eq('id', userId)
     setSaving(false)
     if (error) {
@@ -251,21 +242,6 @@ export default function EditProfilePage() {
           </select>
         </Field>
 
-        <Field label="お気に入り地域（複数選択可）">
-          <div className="flex flex-wrap gap-2">
-            {PREFECTURES.map(p => {
-              const on = favoriteAreas.includes(p)
-              return (
-                <button key={p} type="button" onClick={() => toggleArea(p)}
-                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
-                    on ? 'bg-white text-black border-white' : 'bg-transparent text-zinc-400 border-zinc-700'
-                  }`}>
-                  {p}
-                </button>
-              )
-            })}
-          </div>
-        </Field>
 
         {saveError && <p className="text-red-500 text-xs text-center">{saveError}</p>}
       </div>
