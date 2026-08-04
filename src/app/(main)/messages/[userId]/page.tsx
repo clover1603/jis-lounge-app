@@ -90,7 +90,7 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-20">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
         {messages.map((msg) => {
           const isMe = msg.sender_id === myId
           return (
@@ -112,7 +112,7 @@ export default function ChatPage() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="fixed bottom-16 left-0 right-0 border-t border-zinc-800 bg-black px-4 py-3 flex items-center gap-2">
+      <div className="fixed left-0 right-0 border-t border-zinc-800 bg-black px-4 py-3 flex items-center gap-2 max-w-[430px] mx-auto" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
         <input
           type="text"
           value={input}

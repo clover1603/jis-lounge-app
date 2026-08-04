@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 
 const PROTECTED = ['/board', '/messages', '/mypage', '/stores', '/checkin', '/order']
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isProtected = PROTECTED.some(p => pathname.startsWith(p))
   if (!isProtected) return NextResponse.next()
@@ -19,5 +19,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [],
+  matcher: [
+    '/board/:path*',
+    '/messages/:path*',
+    '/mypage/:path*',
+    '/stores/:path*',
+    '/checkin/:path*',
+    '/order/:path*',
+  ],
 }

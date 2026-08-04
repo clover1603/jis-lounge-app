@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type Session = {
@@ -11,30 +11,52 @@ type Session = {
   totalAmount: number
 }
 
-export default function CheckinPage() {
+function CheckinPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [stores, setStores] = useState<{ id: string; name: string }[]>([])
   const [selectedStore, setSelectedStore] = useState('')
   const [step, setStep] = useState<'idle' | 'group' | 'active'>('idle')
   const [groupSize, setGroupSize] = useState(2)
   const [session, setSession] = useState<Session | null>(null)
   const [elapsed, setElapsed] = useState('')
+  const [storeNotFound, setStoreNotFound] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
+    const saved = localStorage.getItem('active_checkin')
+    if (saved) {
+      try {
+        const s = JSON.parse(saved) as Session
+        setSession(s)
+        setStep('active')
+        return
+      } catch {
+        // 破損データを削除してチェックイン画面を通常表示
+        localStorage.removeItem('active_checkin')
+      }
+    }
+
     const supabase = createClient()
     supabase.from('stores').select('id, name').order('name').then(({ data }) => {
       const list = data ?? []
       setStores(list)
+
+      // ?store=UMEDA のようなURLパラメータで店舗を自動選択
+      const storeParam = searchParams.get('store')
+      if (storeParam) {
+        const matched = list.find(s => s.id === storeParam.toUpperCase())
+        if (matched) {
+          setSelectedStore(matched.name)
+          setStep('group')
+          return
+        }
+        // storeパラメータがあるが該当店舗が見つからなかった
+        setStoreNotFound(true)
+      }
       if (list.length > 0) setSelectedStore(list[0].name)
     })
-    const saved = localStorage.getItem('active_checkin')
-    if (saved) {
-      const s = JSON.parse(saved) as Session
-      setSession(s)
-      setStep('active')
-    }
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     if (step === 'active' && session) {
@@ -208,6 +230,13 @@ export default function CheckinPage() {
           </div>
         </div>
 
+        {storeNotFound && (
+          <div className="w-full bg-red-500/10 border border-red-500/30 rounded-2xl px-4 py-3 text-center">
+            <p className="text-red-400 text-sm font-semibold mb-1">店舗情報を確認できませんでした</p>
+            <p className="text-zinc-400 text-xs">QRコードを再度読み取るか、下から店舗を選択してください</p>
+          </div>
+        )}
+
         <div className="text-center">
           <p className="text-zinc-300 text-sm">カメラでQRコードをスキャンしてください</p>
           <p className="text-zinc-600 text-xs mt-1">店内に設置されたQRコードにカメラを向けてください</p>
@@ -231,8 +260,20 @@ export default function CheckinPage() {
         >
           スキャン成功（デモ）
         </button>
-        <p className="text-zinc-600 text-xs text-center -mt-4">※ プロトタイプ用デモボタンです</p>
+        <p className="text-zinc-600 text-xs text-center -mt-4">※ UI体験確認用デモ ｜ 実QRスキャンは今後実装予定</p>
       </div>
     </div>
+  )
+}
+
+export default function CheckinPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-screen bg-black">
+        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <CheckinPage />
+    </Suspense>
   )
 }

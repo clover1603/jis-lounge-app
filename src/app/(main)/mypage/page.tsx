@@ -460,6 +460,7 @@ export default function MyPage() {
 
         <div className="mx-4 mb-6 bg-zinc-900 rounded-2xl overflow-hidden">
           {[
+            { label: 'デジタル会員証', href: '/mypage/membercard' },
             { label: 'プロフィール編集', href: '/mypage/edit' },
             { label: '設定', href: '/mypage/settings' },
           ].map((item) => (

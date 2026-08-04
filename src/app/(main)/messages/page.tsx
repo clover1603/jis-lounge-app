@@ -85,7 +85,7 @@ export default function MessagesPage() {
         <h1 className="text-lg font-bold">メッセージ</h1>
       </header>
 
-      <div className="flex-1 overflow-y-auto pb-16">
+      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
         {loading && <p className="text-center text-zinc-500 mt-16">読み込み中...</p>}
         {!loading && conversations.length === 0 && (
           <p className="text-center text-zinc-500 mt-16">メッセージはありません。</p>

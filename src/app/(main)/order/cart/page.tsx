@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { CartItem } from '@/lib/types'
 
@@ -9,8 +9,11 @@ const SERVICE_RATE = 0.1
 export default function CartPage() {
   const router = useRouter()
   const [cart, setCart] = useState<CartItem[]>([])
-  const [storeName, setStoreName] = useState('J梅田')
+  const [storeName, setStoreName] = useState('JIS梅田')
   const [ordered, setOrdered] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  // useRef で即時ガード（state 更新の非同期性を補う）
+  const confirmingRef = useRef(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -45,17 +48,31 @@ export default function CartPage() {
   const total = subtotal + service
 
   function confirm() {
-    setOrdered(true)
+    // ref で即時ガード（高速ダブルタップ対策）
+    if (confirmingRef.current) return
+    confirmingRef.current = true
+    setConfirming(true)
+
     if (typeof window !== 'undefined') {
       const session = localStorage.getItem('active_checkin')
       if (session) {
-        const s = JSON.parse(session)
-        s.totalAmount = (s.totalAmount ?? 0) + total
-        localStorage.setItem('active_checkin', JSON.stringify(s))
+        try {
+          const s = JSON.parse(session)
+          s.totalAmount = (s.totalAmount ?? 0) + total
+          localStorage.setItem('active_checkin', JSON.stringify(s))
+        } catch {
+          // active_checkin が破損している場合は totalAmount 加算をスキップし、
+          // セッションデータを削除して安全に終了する
+          localStorage.removeItem('active_checkin')
+        }
       }
       sessionStorage.removeItem('cart')
       sessionStorage.removeItem('storeName')
     }
+
+    setOrdered(true)
+    setConfirming(false)
+    confirmingRef.current = false
   }
 
   return (
@@ -143,10 +160,10 @@ export default function CartPage() {
           </div>
           <button
             onClick={confirm}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || confirming}
             className="w-full bg-white text-black font-bold rounded-xl py-4 text-base disabled:opacity-40 transition-opacity"
           >
-            注文を確定する
+            {confirming ? '処理中...' : '注文を確定する'}
           </button>
         </div>
       )}
@@ -164,10 +181,10 @@ export default function CartPage() {
             <p className="text-zinc-400 text-sm mb-1">{storeName}</p>
             <p className="text-zinc-500 text-xs mb-6">しばらくお待ちください</p>
             <button
-              onClick={() => router.push('/board')}
+              onClick={() => router.push('/checkin')}
               className="w-full bg-white text-black font-semibold rounded-xl py-3 text-sm"
             >
-              閉じる
+              入店中画面へ戻る
             </button>
           </div>
         </div>
