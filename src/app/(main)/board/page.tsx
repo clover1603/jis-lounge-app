@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import NoPhotoSheet from '@/components/NoPhotoSheet'
+import { BOARD_DEMO_TITLES } from '@/lib/mock-title-words'
 
 const AVATAR_COLORS = [
   'bg-rose-500', 'bg-orange-500', 'bg-amber-500', 'bg-emerald-500',
@@ -44,6 +45,7 @@ type DisplayPost = {
   likes: number
   liked: boolean
   createdAt: string
+  titleText?: string
 }
 
 type MessageSheet = { postId: string; userId: string; nickname: string }
@@ -101,7 +103,7 @@ export default function BoardPage() {
     setPosts(postData.map((p: {
       id: string; user_id: string; content: string; likes_count: number;
       target_prefectures: string[]; created_at: string
-    }) => ({
+    }, idx: number) => ({
       id: p.id,
       userId: p.user_id,
       nickname: profileMap[p.user_id]?.nickname ?? 'ゲスト',
@@ -111,6 +113,7 @@ export default function BoardPage() {
       likes: p.likes_count,
       liked: likedSet.has(p.id),
       createdAt: p.created_at,
+      titleText: BOARD_DEMO_TITLES[idx % BOARD_DEMO_TITLES.length] ?? undefined,
     })))
     setLoading(false)
   }
@@ -186,6 +189,9 @@ export default function BoardPage() {
                     <span className="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">{post.age}歳</span>
                   )}
                 </div>
+                {post.titleText && (
+                  <p className="text-[11px] text-zinc-500 mt-0.5 truncate">{post.titleText}</p>
+                )}
                 {post.targetPrefectures.length > 0 && (
                   <div className="flex items-center gap-1 mt-1 flex-wrap">
                     <span className="text-xs text-zinc-600">地域:</span>

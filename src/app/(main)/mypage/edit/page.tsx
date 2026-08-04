@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { MOCK_TITLES, MOCK_FRAMES } from '@/lib/mock-member-engagement'
-import type { MemberTitle, MemberFrame } from '@/lib/mock-member-engagement'
 
 const MBTI_OPTIONS = ['INTJ','INTP','ENTJ','ENTP','INFJ','INFP','ENFJ','ENFP','ISTJ','ISFJ','ESTJ','ESFJ','ISTP','ISFP','ESTP','ESFP']
 const BODY_TYPES = ['細身', 'スリム', '普通', 'がっちり', 'ぽっちゃり']
@@ -44,8 +43,6 @@ export default function EditProfilePage() {
   })
   const [photos, setPhotos] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
-  const [titles, setTitles] = useState<MemberTitle[]>(MOCK_TITLES)
-  const [frames, setFrames] = useState<MemberFrame[]>(MOCK_FRAMES)
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -247,81 +244,23 @@ export default function EditProfilePage() {
           </select>
         </Field>
 
-
-        {/* 称号 */}
         <div>
-          <p className="text-xs text-zinc-500 mb-2">称号</p>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-            {titles.map(t => {
-              const active = t.isEarned && titles.find(x => x.isSelected)?.id === t.id
-              return (
-                <button
-                  key={t.id}
-                  disabled={!t.isEarned}
-                  onClick={() => setTitles(prev => prev.map(x => ({ ...x, isSelected: x.id === t.id })))}
-                  className={`flex-shrink-0 rounded-xl border px-4 py-2.5 text-left transition-colors ${
-                    !t.isEarned
-                      ? 'border-zinc-800 bg-zinc-900/40 opacity-40 cursor-not-allowed'
-                      : active
-                      ? 'border-white bg-white text-black'
-                      : 'border-zinc-700 bg-zinc-900 text-white hover:border-zinc-500'
-                  }`}
-                >
-                  <p className="text-sm font-semibold whitespace-nowrap">
-                    {t.id === 'tl0' ? '（なし）' : t.title}
-                  </p>
-                  <p className={`text-[10px] mt-0.5 ${active ? 'text-zinc-500' : 'text-zinc-600'}`}>
-                    {t.isEarned ? t.description : '🔒 未解放'}
-                  </p>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* フレーム */}
-        <div>
-          <p className="text-xs text-zinc-500 mb-2">プロフィールフレーム</p>
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
-            {frames.map(f => {
-              const active = frames.find(x => x.isSelected)?.id === f.id
-              return (
-                <button
-                  key={f.id}
-                  disabled={!f.isEarned}
-                  onClick={() => setFrames(prev => prev.map(x => ({ ...x, isSelected: x.id === f.id })))}
-                  className={`flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-xl border transition-colors ${
-                    !f.isEarned
-                      ? 'border-zinc-800 bg-zinc-900/40 opacity-40 cursor-not-allowed'
-                      : active
-                      ? 'border-white bg-zinc-800'
-                      : 'border-zinc-700 bg-zinc-900 hover:border-zinc-500'
-                  }`}
-                >
-                  {/* フレームプレビュー */}
-                  <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center p-[3px]"
-                    style={{ background: f.cssGradient }}
-                  >
-                    <div className="w-full h-full rounded-full bg-zinc-700 flex items-center justify-center text-xl">
-                      {active ? '✓' : ''}
-                    </div>
-                  </div>
-                  <p className={`text-xs font-semibold ${active ? 'text-white' : 'text-zinc-400'}`}>{f.name}</p>
-                  <p className="text-[10px] text-zinc-600 text-center max-w-[4.5rem] leading-tight">
-                    {f.isEarned ? (f.earnedVia ?? '標準') : '🔒 未解放'}
-                  </p>
-                </button>
-              )
-            })}
-          </div>
+          <Link
+            href="/mypage/titles"
+            className="flex items-center justify-between w-full bg-zinc-900 rounded-xl border border-zinc-800 px-4 py-3.5 hover:bg-zinc-800/60 transition-colors"
+          >
+            <div>
+              <p className="text-sm font-semibold text-white">称号・フレーム</p>
+              <p className="text-xs text-zinc-500 mt-0.5">称号をつくって表示する</p>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </Link>
         </div>
 
         {saveError && <p className="text-red-500 text-xs text-center">{saveError}</p>}
 
-        <p className="text-zinc-700 text-[10px] text-center">
-          ※ 称号・フレームはUIデモ表示。実連携はPhase 2予定。
-        </p>
       </div>
     </div>
   )

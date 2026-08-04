@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { MOCK_JOURNEY, RANK_ACCENT } from '@/lib/mock-member-journey'
 import { MOCK_JILEAGE_BALANCE, MOCK_TICKETS_COUNT, MOCK_ACHIEVEMENTS } from '@/lib/mock-member-engagement'
 import { getNextChallenge, getActiveCount, CATEGORY_LABEL } from '@/lib/mock-challenges'
+import { loadTitleSelection, buildTitleText } from '@/lib/mock-title-words'
 
 type DbProfile = {
   member_id: string
@@ -44,6 +45,7 @@ export default function MyPage() {
   const [rankingLoading, setRankingLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [displayTitle, setDisplayTitle] = useState<string | null>(null)
 
   async function loadRanking(metric: RankingMetric, period: RankingPeriod) {
     setRankingLoading(true)
@@ -71,6 +73,11 @@ export default function MyPage() {
     }
     load()
   }, [router])
+
+  useEffect(() => {
+    const sel = loadTitleSelection()
+    setDisplayTitle(buildTitleText(sel.prefixId, sel.suffixId))
+  }, [])
 
   if (loading) return (
     <div className="flex justify-center items-center min-h-screen">
@@ -108,6 +115,11 @@ export default function MyPage() {
           <div className="flex-1 min-w-0">
             <p className="font-bold text-lg">{user.nickname}</p>
             <p className="text-zinc-400 text-sm">{user.age}歳</p>
+            {displayTitle && (
+              <Link href="/mypage/titles" className="block">
+                <p className="text-xs text-zinc-500 mt-0.5 truncate">{displayTitle}</p>
+              </Link>
+            )}
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs text-zinc-500">{user.memberId}</span>
               <span className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
