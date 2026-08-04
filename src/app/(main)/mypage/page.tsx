@@ -57,60 +57,6 @@ const RANK_CONDITIONS: Record<MemberRank, RankCondition> = {
   DIAMOND:  { rating: 3.5,   hours: { male: 45, female: 90 } },
 }
 
-type BadgeLevel = { label: string; requirement: number }
-type BadgeCategory = { category: string; icon: string; levels: BadgeLevel[]; current: number }
-
-const BADGE_CATEGORIES: BadgeCategory[] = [
-  {
-    category: '来店回数',
-    icon: '🏠',
-    current: 8,
-    levels: [
-      { label: '初回来店', requirement: 1 },
-      { label: '三回来店', requirement: 3 },
-      { label: '十回来店', requirement: 10 },
-      { label: '三十回来店', requirement: 30 },
-      { label: '五十回来店', requirement: 50 },
-      { label: '百回来店', requirement: 100 },
-    ],
-  },
-  {
-    category: 'ボトルキープ',
-    icon: '🍾',
-    current: 2,
-    levels: [
-      { label: 'ボトル初注文', requirement: 1 },
-      { label: 'ボトル5本', requirement: 5 },
-      { label: 'ボトル10本', requirement: 10 },
-    ],
-  },
-  {
-    category: 'シャンパン',
-    icon: '🥂',
-    current: 0,
-    levels: [
-      { label: 'シャンパン初注文', requirement: 1 },
-      { label: 'シャンパン5本', requirement: 5 },
-    ],
-  },
-  {
-    category: 'プロフィール',
-    icon: '👤',
-    current: 1,
-    levels: [
-      { label: 'プロフィール完成', requirement: 1 },
-    ],
-  },
-  {
-    category: 'お気に入り',
-    icon: '⭐',
-    current: 2,
-    levels: [
-      { label: 'お気に入り3店舗', requirement: 3 },
-      { label: '全店舗登録', requirement: 8 },
-    ],
-  },
-]
 
 function calcAge(birthday: string | null): number | null {
   if (!birthday) return null
@@ -134,7 +80,6 @@ export default function MyPage() {
   const [rankingLoading, setRankingLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'rank' | 'badge'>('rank')
   const [showRankInfo, setShowRankInfo] = useState(false)
 
   async function loadRanking(metric: RankingMetric, period: RankingPeriod) {
@@ -188,10 +133,6 @@ export default function MyPage() {
   const ratingProgress = nextCond?.rating ? Math.min(100, (user.rating / nextCond.rating) * 100) : 100
   const hoursProgress = nextCond ? Math.min(100, (user.seatingHours / requiredHours) * 100) : 100
 
-  const totalEarned = BADGE_CATEGORIES.reduce((sum, cat) => {
-    return sum + cat.levels.filter(l => cat.current >= l.requirement).length
-  }, 0)
-  const totalBadges = BADGE_CATEGORIES.reduce((sum, cat) => sum + cat.levels.length, 0)
 
   return (
     <div className="flex flex-col min-h-screen bg-black">
@@ -283,18 +224,20 @@ export default function MyPage() {
             </div>
           </Link>
 
-          {/* Memory */}
-          <Link href="/mypage/memory" className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4 hover:bg-zinc-800/60 transition-colors">
+          {/* トロフィー */}
+          <Link href="/mypage/trophy" className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4 hover:bg-zinc-800/60 transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center flex-shrink-0">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <polyline points="6 9 6 2 18 2 18 9" />
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2" />
+                  <rect x="6" y="18" width="12" height="4" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Memory</p>
+                <p className="text-sm font-semibold text-white">トロフィー</p>
                 <p className="text-xs text-zinc-500 mt-0.5">
-                  実績 {MOCK_JOURNEY.achievements.filter(a => a.isUnlocked).length}/{MOCK_JOURNEY.achievements.length} 解除 · {MOCK_JOURNEY.visitedStoreIds.length}店舗利用
+                  実績 {MOCK_JOURNEY.achievements.filter(a => a.isUnlocked).length}/{MOCK_JOURNEY.achievements.length} · {MOCK_JOURNEY.visitedStoreIds.length}店舗利用
                 </p>
               </div>
             </div>
@@ -302,20 +245,7 @@ export default function MyPage() {
           </Link>
         </div>
 
-        <div className="mx-4 mb-4 flex rounded-xl overflow-hidden border border-zinc-800">
-          {[['rank', '会員ランク'], ['badge', '称号']].map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key as 'rank' | 'badge')}
-              className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${activeTab === key ? 'bg-white text-black' : 'bg-zinc-900 text-zinc-400'}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === 'rank' && (
-          <div className="mx-4 mb-4">
+        <div className="mx-4 mb-4">
             {/* ランクカード */}
             <div className={`rounded-2xl bg-gradient-to-br ${RANK_COLORS[user.rank]} p-6 mb-4 relative`}>
               <button
@@ -373,7 +303,6 @@ export default function MyPage() {
               ))}
             </div>
           </div>
-        )}
 
         {/* ランク条件モーダル */}
         {showRankInfo && (
@@ -417,66 +346,6 @@ export default function MyPage() {
                 onClick={() => setShowRankInfo(false)}
                 className="w-full py-3 text-center text-white font-bold border-t border-zinc-700"
               >OK</button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'badge' && (
-          <div className="mx-4 mb-4">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-zinc-400">獲得済み称号</p>
-              <span className="text-sm font-bold text-yellow-400">{totalEarned}<span className="text-zinc-500">/{totalBadges}</span></span>
-            </div>
-            <div className="space-y-4">
-              {BADGE_CATEGORIES.map((cat) => {
-                const earnedLevels = cat.levels.filter(l => cat.current >= l.requirement)
-                const nextLevel = cat.levels.find(l => cat.current < l.requirement)
-                const progress = nextLevel
-                  ? Math.round((cat.current / nextLevel.requirement) * 100)
-                  : 100
-
-                return (
-                  <div key={cat.category} className="bg-zinc-900 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-lg">{cat.icon}</span>
-                      <span className="text-sm font-bold text-white">{cat.category}</span>
-                      <span className="ml-auto text-xs text-zinc-500">{earnedLevels.length}/{cat.levels.length}</span>
-                    </div>
-
-                    {/* 達成済みバッジ */}
-                    {earnedLevels.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {earnedLevels.map(l => (
-                          <div key={l.label} className="flex items-center gap-1 bg-yellow-500/20 border border-yellow-500 rounded-full px-2 py-1">
-                            <span className="text-xs">🏅</span>
-                            <span className="text-[10px] font-semibold text-yellow-400">{l.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* 次のレベル（進行中） */}
-                    {nextLevel && (
-                      <div>
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-zinc-400">次の称号: <span className="text-white font-semibold">{nextLevel.label}</span></span>
-                          <span className="text-zinc-500">{cat.current}/{nextLevel.requirement}</span>
-                        </div>
-                        <div className="w-full h-2 bg-zinc-700 rounded-full">
-                          <div
-                            className="h-full bg-yellow-400 rounded-full transition-all"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-
-                    {!nextLevel && (
-                      <p className="text-xs text-yellow-400 font-semibold">✨ 全レベル達成！</p>
-                    )}
-                  </div>
-                )
-              })}
             </div>
           </div>
         )}
