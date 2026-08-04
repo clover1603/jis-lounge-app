@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { MemberRank, Gender } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { MOCK_JOURNEY, RANK_ACCENT } from '@/lib/mock-member-journey'
 
 type DbProfile = {
   member_id: string
@@ -229,6 +230,76 @@ export default function MyPage() {
             <p className="text-xs text-zinc-500">マイレージ</p>
             <p className="text-2xl font-bold text-yellow-400">{user.mileage.toLocaleString()}<span className="text-sm font-normal text-zinc-400 ml-1">pt</span></p>
           </div>
+        </div>
+
+        {/* ── Journey / Rank / Memory サマリーカード ── */}
+        <div className="mx-4 mb-4 space-y-3">
+
+          {/* Journey */}
+          <Link href="/mypage/journey" className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4 hover:bg-zinc-800/60 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Journey</p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  今月 {MOCK_JOURNEY.totalVisitsThisMonth}回来店 · {MOCK_JOURNEY.monthlyMissions.filter(m => m.completed).length}/{MOCK_JOURNEY.monthlyMissions.length} 達成
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full bg-white rounded-full" style={{ width: `${Math.round((MOCK_JOURNEY.monthlyMissions.filter(m=>m.completed).length / MOCK_JOURNEY.monthlyMissions.length) * 100)}%` }} />
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+            </div>
+          </Link>
+
+          {/* Rank */}
+          <Link href="/mypage/rank" className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4 hover:bg-zinc-800/60 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">会員ランク</p>
+                <p className="text-xs mt-0.5" style={{ color: RANK_ACCENT[user.rank] }}>
+                  {user.rank}
+                  {nextRank ? <span className="text-zinc-500"> → {nextRank}</span> : <span className="text-zinc-500"> 最高ランク</span>}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${Math.round(hoursProgress)}%`, backgroundColor: RANK_ACCENT[user.rank] }} />
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+            </div>
+          </Link>
+
+          {/* Memory */}
+          <Link href="/mypage/memory" className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4 hover:bg-zinc-800/60 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">Memory</p>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  実績 {MOCK_JOURNEY.achievements.filter(a => a.isUnlocked).length}/{MOCK_JOURNEY.achievements.length} 解除 · {MOCK_JOURNEY.visitedStoreIds.length}店舗利用
+                </p>
+              </div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+          </Link>
         </div>
 
         <div className="mx-4 mb-4 flex rounded-xl overflow-hidden border border-zinc-800">
