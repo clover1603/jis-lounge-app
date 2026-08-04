@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { MemberRank, Gender } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { MOCK_JOURNEY, RANK_ACCENT } from '@/lib/mock-member-journey'
+import { MOCK_JILEAGE_BALANCE, MOCK_TICKETS_COUNT, MOCK_ACHIEVEMENTS } from '@/lib/mock-member-engagement'
 
 type DbProfile = {
   member_id: string
@@ -17,44 +18,6 @@ type DbProfile = {
   rating: number
   seating_hours: number
   photos: string[]
-}
-
-const RANK_COLORS: Record<MemberRank, string> = {
-  BRONZE:   'from-amber-700 to-amber-500',
-  SILVER:   'from-zinc-500 to-zinc-300',
-  GOLD:     'from-yellow-600 to-yellow-400',
-  PLATINUM: 'from-cyan-700 to-cyan-500',
-  DIAMOND:  'from-purple-700 to-purple-500',
-}
-
-const RANK_LABELS: Record<MemberRank, string> = {
-  BRONZE:   'BRONZE',
-  SILVER:   'SILVER',
-  GOLD:     'GOLD',
-  PLATINUM: 'PLATINUM',
-  DIAMOND:  'DIAMOND',
-}
-
-const RANK_BADGE_COLORS: Record<MemberRank, string> = {
-  BRONZE:   'bg-amber-700 text-white',
-  SILVER:   'bg-zinc-500 text-white',
-  GOLD:     'bg-yellow-500 text-black',
-  PLATINUM: 'bg-cyan-700 text-white',
-  DIAMOND:  'bg-purple-700 text-white',
-}
-
-const RANKS: MemberRank[] = ['BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'DIAMOND']
-
-type RankCondition = {
-  rating: number | null
-  hours: { male: number; female: number }
-}
-const RANK_CONDITIONS: Record<MemberRank, RankCondition> = {
-  BRONZE:   { rating: null,  hours: { male: 0,  female: 0  } },
-  SILVER:   { rating: null,  hours: { male: 2,  female: 2  } },
-  GOLD:     { rating: 3.1,   hours: { male: 10, female: 13 } },
-  PLATINUM: { rating: 3.3,   hours: { male: 25, female: 45 } },
-  DIAMOND:  { rating: 3.5,   hours: { male: 45, female: 90 } },
 }
 
 
@@ -80,7 +43,6 @@ export default function MyPage() {
   const [rankingLoading, setRankingLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showRankInfo, setShowRankInfo] = useState(false)
 
   async function loadRanking(metric: RankingMetric, period: RankingPeriod) {
     setRankingLoading(true)
@@ -126,12 +88,6 @@ export default function MyPage() {
     seatingHours: profile.seating_hours ?? 0,
   } : { nickname: 'ゲスト', age: null, memberId: '---', gender: 'male' as Gender, rank: 'BRONZE' as MemberRank, mileage: 0, rating: 3.0, seatingHours: 0 }
 
-  const rankIdx = RANKS.indexOf(user.rank)
-  const nextRank = RANKS[rankIdx + 1] as MemberRank | undefined
-  const nextCond = nextRank ? RANK_CONDITIONS[nextRank] : null
-  const requiredHours = nextCond ? (user.gender === 'male' ? nextCond.hours.male : nextCond.hours.female) : 0
-  const ratingProgress = nextCond?.rating ? Math.min(100, (user.rating / nextCond.rating) * 100) : 100
-  const hoursProgress = nextCond ? Math.min(100, (user.seatingHours / requiredHours) * 100) : 100
 
 
   return (
@@ -165,18 +121,25 @@ export default function MyPage() {
           </Link>
         </div>
 
-        <div className="mx-4 mb-4 bg-zinc-900 rounded-2xl p-4 flex items-center gap-4">
-          <span className="text-2xl">🐷</span>
-          <div>
-            <p className="text-xs text-zinc-500">マイレージ</p>
-            <p className="text-2xl font-bold text-yellow-400">{user.mileage.toLocaleString()}<span className="text-sm font-normal text-zinc-400 ml-1">pt</span></p>
+        {/* ── Jレージ残高 ── */}
+        <Link href="/mypage/jileage" className="mx-4 mb-4 bg-zinc-900 rounded-2xl p-4 flex items-center gap-4 border border-zinc-800 hover:bg-zinc-800/60 transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-indigo-900/60 flex items-center justify-center flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 6v6l4 2" />
+            </svg>
           </div>
-        </div>
+          <div className="flex-1">
+            <p className="text-xs text-zinc-500">Jレージ</p>
+            <p className="text-2xl font-bold text-indigo-300">{MOCK_JILEAGE_BALANCE.toLocaleString()}<span className="text-sm font-normal text-zinc-400 ml-1">pt</span></p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+        </Link>
 
-        {/* ── Journey / Rank / Memory サマリーカード ── */}
+        {/* ── 継続機能サマリーカード ── */}
         <div className="mx-4 mb-4 space-y-3">
 
-          {/* Journey */}
+          {/* 来店チャレンジ */}
           <Link href="/mypage/journey" className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4 hover:bg-zinc-800/60 transition-colors">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center flex-shrink-0">
@@ -200,155 +163,61 @@ export default function MyPage() {
             </div>
           </Link>
 
-          {/* Rank */}
-          <Link href="/mypage/rank" className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4 hover:bg-zinc-800/60 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          {/* 2x2グリッド: ステータス / 実績 / ラッキーくじ / トロフィー */}
+          <div className="grid grid-cols-2 gap-3">
+
+            {/* 会員ステータス */}
+            <Link href="/mypage/status" className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 hover:bg-zinc-800/60 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-zinc-800 flex items-center justify-center mb-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                 </svg>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-white">会員ランク</p>
-                <p className="text-xs mt-0.5" style={{ color: RANK_ACCENT[user.rank] }}>
-                  {user.rank}
-                  {nextRank ? <span className="text-zinc-500"> → {nextRank}</span> : <span className="text-zinc-500"> 最高ランク</span>}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${Math.round(hoursProgress)}%`, backgroundColor: RANK_ACCENT[user.rank] }} />
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
-            </div>
-          </Link>
+              <p className="text-sm font-semibold text-white">会員ステータス</p>
+              <p className="text-xs mt-1" style={{ color: RANK_ACCENT[user.rank] }}>{user.rank}</p>
+            </Link>
 
-          {/* トロフィー */}
-          <Link href="/mypage/trophy" className="flex items-center justify-between bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4 hover:bg-zinc-800/60 transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center flex-shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            {/* 実績・コレクション */}
+            <Link href="/mypage/achievements" className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 hover:bg-zinc-800/60 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-zinc-800 flex items-center justify-center mb-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9" />
                   <path d="M6 18H4a2 2 0 0 1-2-2v-1a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2h-2" />
                   <rect x="6" y="18" width="12" height="4" />
                 </svg>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-white">トロフィー</p>
-                <p className="text-xs text-zinc-500 mt-0.5">
-                  実績 {MOCK_JOURNEY.achievements.filter(a => a.isUnlocked).length}/{MOCK_JOURNEY.achievements.length} · {MOCK_JOURNEY.visitedStoreIds.length}店舗利用
-                </p>
+              <p className="text-sm font-semibold text-white">実績</p>
+              <p className="text-xs text-zinc-500 mt-1">{MOCK_ACHIEVEMENTS.filter(a => a.isUnlocked).length}/{MOCK_ACHIEVEMENTS.length} 解除</p>
+            </Link>
+
+            {/* ラッキーくじ */}
+            <Link href="/mypage/lucky-draw" className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 hover:bg-zinc-800/60 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-zinc-800 flex items-center justify-center mb-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
               </div>
-            </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
-          </Link>
+              <p className="text-sm font-semibold text-white">ラッキーくじ</p>
+              <p className="text-xs text-zinc-500 mt-1">抽選券 {MOCK_TICKETS_COUNT}枚</p>
+            </Link>
+
+            {/* トロフィー */}
+            <Link href="/mypage/trophy" className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 hover:bg-zinc-800/60 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-zinc-800 flex items-center justify-center mb-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9h18v2a9 9 0 0 1-18 0V9z" />
+                  <path d="M12 20v-9" />
+                  <path d="M9 20h6" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-white">トロフィー</p>
+              <p className="text-xs text-zinc-500 mt-1">{MOCK_JOURNEY.visitedStoreIds.length}店舗 利用済み</p>
+            </Link>
+
+          </div>
         </div>
-
-        <div className="mx-4 mb-4">
-            {/* ランクカード */}
-            <div className={`rounded-2xl bg-gradient-to-br ${RANK_COLORS[user.rank]} p-6 mb-4 relative`}>
-              <button
-                onClick={() => setShowRankInfo(true)}
-                className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold"
-              >?</button>
-              <p className="text-4xl font-black tracking-widest text-center text-white mb-4">
-                {RANK_LABELS[user.rank]}
-              </p>
-
-              {/* 評価点 */}
-              <div className="mb-3">
-                <div className="flex justify-between text-xs text-white/70 mb-1">
-                  <span>相手からの評価</span>
-                  <span>{user.rating.toFixed(1)}点 {nextCond?.rating ? `/ ${nextCond.rating}点以上` : ''}</span>
-                </div>
-                <div className="w-full h-2 bg-white/20 rounded-full">
-                  <div className="h-full bg-white rounded-full" style={{ width: `${ratingProgress}%` }} />
-                </div>
-              </div>
-
-              {/* 相席時間 */}
-              <div>
-                <div className="flex justify-between text-xs text-white/70 mb-1">
-                  <span>総相席時間</span>
-                  <span>{user.seatingHours}時間 {nextCond ? `/ ${requiredHours}時間以上` : ''}</span>
-                </div>
-                <div className="w-full h-2 bg-white/20 rounded-full">
-                  <div className="h-full bg-white rounded-full" style={{ width: `${hoursProgress}%` }} />
-                </div>
-              </div>
-
-              {nextRank && (
-                <p className="text-white/60 text-xs text-center mt-3">
-                  次のランク: <span className="text-white font-bold">{RANK_LABELS[nextRank]}</span>
-                </p>
-              )}
-            </div>
-
-            {/* ランク進行ライン */}
-            <div className="flex items-center justify-between px-1 mb-2">
-              {RANKS.map((r, i) => (
-                <div key={r} className="flex items-center">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold border-2
-                      ${r === user.rank ? 'border-white bg-white text-black scale-110' : rankIdx > i ? 'border-white bg-white/20 text-white' : 'border-zinc-700 bg-zinc-900 text-zinc-600'}`}>
-                      {r.slice(0, 2)}
-                    </div>
-                    <span className={`text-[9px] ${rankIdx >= i ? 'text-white' : 'text-zinc-600'}`}>{r}</span>
-                  </div>
-                  {i < RANKS.length - 1 && (
-                    <div className={`h-0.5 w-6 mx-0.5 mb-4 ${rankIdx > i ? 'bg-white' : 'bg-zinc-700'}`} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-        {/* ランク条件モーダル */}
-        {showRankInfo && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
-            <div className="bg-zinc-900 rounded-2xl p-6 w-full max-w-sm max-h-[80vh] overflow-y-auto">
-              <h2 className="text-lg font-bold text-center mb-4">会員ランク</h2>
-              <p className="text-zinc-400 text-sm mb-4">
-                「相手からの評価」と「相席時間」を元に算出され、毎日午前中に更新されます。
-              </p>
-              <div className="space-y-4 mb-4">
-                {[...RANKS].reverse().map(r => {
-                  const cond = RANK_CONDITIONS[r]
-                  return (
-                    <div key={r}>
-                      <p className={`font-bold text-sm mb-1 bg-gradient-to-r ${RANK_COLORS[r]} bg-clip-text text-transparent`}>
-                        ①{r === 'BRONZE' ? 'BRONZE（アプリ登録）' : r}
-                      </p>
-                      {cond.rating && (
-                        <p className="text-zinc-300 text-xs">男性：{cond.rating}点以上 & {cond.hours.male}時間以上</p>
-                      )}
-                      {cond.rating && (
-                        <p className="text-zinc-300 text-xs">女性：{cond.rating}点以上 & {cond.hours.female}時間以上</p>
-                      )}
-                      {!cond.rating && r !== 'BRONZE' && (
-                        <p className="text-zinc-300 text-xs">男女：{cond.hours.male}時間以上</p>
-                      )}
-                      {r === 'BRONZE' && (
-                        <p className="text-zinc-300 text-xs">男女：公式アプリ登録</p>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-              <p className="text-zinc-500 text-xs mb-4">
-                ※相手からの評価＝過去365日間における相席相手からの評価の平均点。良い5.0点、普通3.0点、悪い1.0点で計算。評価数が3組未満の場合は一律3.0点。
-              </p>
-              <p className="text-zinc-500 text-xs mb-6">
-                ※相席時間＝過去365日間の累計相席時間。VIP席は2倍カウント。
-              </p>
-              <button
-                onClick={() => setShowRankInfo(false)}
-                className="w-full py-3 text-center text-white font-bold border-t border-zinc-700"
-              >OK</button>
-            </div>
-          </div>
-        )}
 
         <div className="mx-4 mb-4">
           <h2 className="text-sm font-bold mb-3">ランキング</h2>
