@@ -77,24 +77,26 @@ function HeartSVG({ color, size = 48, glow = '' }: { color: string; size?: numbe
 function SilhouetteSVG({ type, height = 120, opacity = 1 }: { type: 'male'|'female'; height?: number; opacity?: number }) {
   const w = type === 'male' ? 48 : 42
   const h = height
+  // 男=青系、女=ピンク系
+  const bodyColor  = type === 'male' ? '#1e3a5f' : '#4a1030'
+  const accentColor= type === 'male' ? '#2563a8' : '#9d174d'
+  const headColor  = type === 'male' ? '#1e40af' : '#be185d'
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none" style={{ opacity }}>
-      {/* head */}
-      <ellipse cx={w/2} cy={12} rx={9} ry={10} fill="#27272a" />
+      <ellipse cx={w/2} cy={12} rx={9} ry={10} fill={headColor} fillOpacity={0.85} />
       {type === 'male' ? (
         <>
-          {/* broad shoulders, suit body */}
-          <path d={`M4 32 Q${w/2} 26 ${w-4} 32 L${w-6} ${h} L6 ${h}Z`} fill="#1c1c1e" />
-          {/* legs */}
-          <rect x={10} y={h-36} width={11} height={36} rx={4} fill="#27272a" />
-          <rect x={w-21} y={h-36} width={11} height={36} rx={4} fill="#27272a" />
+          <path d={`M4 32 Q${w/2} 26 ${w-4} 32 L${w-6} ${h} L6 ${h}Z`} fill={bodyColor} />
+          {/* スーツのライン */}
+          <line x1={w/2} y1={32} x2={w/2} y2={h-36} stroke={accentColor} strokeWidth={1.5} strokeOpacity={0.5} />
+          <rect x={10} y={h-36} width={11} height={36} rx={4} fill={bodyColor} />
+          <rect x={w-21} y={h-36} width={11} height={36} rx={4} fill={bodyColor} />
         </>
       ) : (
         <>
-          {/* narrower shoulders, slight dress flare */}
-          <path d={`M8 30 Q${w/2} 25 ${w-8} 30 L${w-2} ${h} L2 ${h}Z`} fill="#1c1c1e" />
-          {/* dress flare bottom */}
-          <path d={`M6 ${h-30} Q${w/2} ${h-20} ${w-6} ${h-30} L${w-2} ${h} L2 ${h}Z`} fill="#222224" />
+          <path d={`M8 30 Q${w/2} 25 ${w-8} 30 L${w-2} ${h} L2 ${h}Z`} fill={bodyColor} />
+          {/* ドレス裾フレア */}
+          <path d={`M5 ${h-34} Q${w/2} ${h-22} ${w-5} ${h-34} L${w-1} ${h} L1 ${h}Z`} fill={accentColor} fillOpacity={0.5} />
         </>
       )}
     </svg>
@@ -102,29 +104,49 @@ function SilhouetteSVG({ type, height = 120, opacity = 1 }: { type: 'male'|'fema
 }
 
 // Lounge door: two panels + arch
+// 蝶番を軸に scaleX で奥へ開くように表現（左パネル=左蝶番、右パネル=右蝶番）
 function DoorSVG({ openAngle }: { openAngle: number }) {
-  // openAngle 0=closed, 1=fully open (perspective skew)
-  const skewLeft  = openAngle * 50  // left panel skews right
-  const skewRight = openAngle * -50 // right panel skews left
+  // openAngle 0=closed, 1=fully open
+  // scaleX: 1→ほぼ0 に縮む（奥へ開く遠近感）
+  const scale = Math.max(0.02, 1 - openAngle)
+  // 奥から差し込む環境光
+  const glowOpacity = openAngle * 0.12
   return (
-    <svg width="260" height="320" viewBox="0 0 260 320" fill="none">
-      {/* arch frame */}
-      <path d="M10 320 L10 80 Q130 0 250 80 L250 320Z" stroke="#3f3f46" strokeWidth="6" fill="#09090b" />
-      {/* left door panel */}
-      <g style={{ transform: `skewY(${skewLeft}deg)`, transformOrigin: '65px 320px', transition: 'transform 0.05s' }}>
-        <rect x={14} y={82} width={116} height={232} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
-        <rect x={22} y={92} width={100} height={104} rx={2} fill="#27272a" />
-        <rect x={22} y={204} width={100} height={100} rx={2} fill="#27272a" />
-        <circle cx={124} cy={200} r={5} fill="#52525b" />
+    <svg width="260" height="340" viewBox="0 0 260 340" fill="none" overflow="visible">
+      {/* 奥の光 */}
+      <ellipse cx={130} cy={210} rx={110 * openAngle} ry={130 * openAngle}
+        fill="#d97706" fillOpacity={glowOpacity} />
+
+      {/* アーチ枠 */}
+      <path d="M10 340 L10 82 Q130 2 250 82 L250 340Z"
+        stroke="#3f3f46" strokeWidth="6" fill="#09090b" />
+
+      {/* 左パネル — 左端（x=14）が蝶番。scaleX で右へ潰れる */}
+      <g style={{
+        transformOrigin: '14px 211px',
+        transform: `scaleX(${scale})`,
+      }}>
+        <rect x={14} y={84} width={116} height={250} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
+        {/* 鏡面ハイライト */}
+        <rect x={18} y={88} width={4} height={238} rx={2} fill="#27272a" opacity={0.6} />
+        <rect x={24} y={94} width={98} height={106} rx={2} fill="#27272a" />
+        <rect x={24} y={208} width={98} height={116} rx={2} fill="#27272a" />
+        <circle cx={124} cy={210} r={5} fill="#52525b" />
       </g>
-      {/* right door panel */}
-      <g style={{ transform: `skewY(${skewRight}deg)`, transformOrigin: '195px 320px', transition: 'transform 0.05s' }}>
-        <rect x={130} y={82} width={116} height={232} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
-        <rect x={138} y={92} width={100} height={104} rx={2} fill="#27272a" />
-        <rect x={138} y={204} width={100} height={100} rx={2} fill="#27272a" />
-        <circle cx={136} cy={200} r={5} fill="#52525b" />
+
+      {/* 右パネル — 右端（x=246）が蝶番。scaleX で左へ潰れる */}
+      <g style={{
+        transformOrigin: '246px 211px',
+        transform: `scaleX(${scale})`,
+      }}>
+        <rect x={130} y={84} width={116} height={250} rx={2} fill="#18181b" stroke="#3f3f46" strokeWidth="2" />
+        <rect x={238} y={88} width={4} height={238} rx={2} fill="#27272a" opacity={0.6} />
+        <rect x={138} y={94} width={98} height={106} rx={2} fill="#27272a" />
+        <rect x={138} y={208} width={98} height={116} rx={2} fill="#27272a" />
+        <circle cx={136} cy={210} r={5} fill="#52525b" />
       </g>
-      {/* JIS sign above door */}
+
+      {/* JIS サイン */}
       <rect x={100} y={22} width={60} height={22} rx={4} fill="#1c1c1e" stroke="#3f3f46" strokeWidth={1} />
       <text x={130} y={37} textAnchor="middle" fill="#a16207" fontSize={11} fontWeight="bold" fontFamily="serif">JIS</text>
     </svg>
@@ -163,20 +185,66 @@ function LoungeInteriorSVG() {
   )
 }
 
-// Background crowd silhouettes
+// エキストラ群: 男=青、女=ピンク、奥ほど小さく・薄く
 function CrowdSVG() {
+  // [x, y_head, scale, type]  奥=小
+  const extras: [number, number, number, 'male'|'female'][] = [
+    // 奥の列（小・薄め）
+    [30,  30, 0.55, 'male'],
+    [55,  25, 0.50, 'female'],
+    [80,  28, 0.52, 'male'],
+    [108, 22, 0.48, 'female'],
+    [195, 26, 0.50, 'male'],
+    [220, 20, 0.46, 'female'],
+    [248, 28, 0.53, 'male'],
+    [275, 24, 0.49, 'female'],
+    [300, 30, 0.52, 'male'],
+    // 手前の列（大・はっきり）
+    [15,  70, 0.72, 'female'],
+    [50,  68, 0.75, 'male'],
+    [88,  65, 0.70, 'female'],
+    [120, 62, 0.68, 'male'],
+    [215, 64, 0.71, 'male'],
+    [248, 66, 0.74, 'female'],
+    [280, 62, 0.70, 'male'],
+    [310, 68, 0.73, 'female'],
+  ]
+  const maleBody  = '#1e3a5f'
+  const femaleBody= '#4a1030'
+  const maleHead  = '#1e40af'
+  const femaleHead= '#be185d'
+  const maleFill  = maleBody
+  const femaleFill= femaleBody
   return (
-    <svg width="340" height="200" viewBox="0 0 340 200" fill="none" opacity={0.5}>
-      {/* left group */}
-      <ellipse cx={45} cy={50} rx={9} ry={10} fill="#1f1f21" />
-      <path d="M30 68 Q45 62 60 68 L58 130 L32 130Z" fill="#1a1a1c" />
-      <ellipse cx={80} cy={55} rx={8} ry={9} fill="#1f1f21" />
-      <path d="M67 72 Q80 66 93 72 L91 125 L69 125Z" fill="#1a1a1c" />
-      {/* right group */}
-      <ellipse cx={260} cy={52} rx={9} ry={10} fill="#1f1f21" />
-      <path d="M246 70 Q260 64 274 70 L272 128 L248 128Z" fill="#1a1a1c" />
-      <ellipse cx={295} cy={48} rx={8} ry={9} fill="#1f1f21" />
-      <path d="M283 66 Q295 60 307 66 L305 120 L285 120Z" fill="#1a1a1c" />
+    <svg width="340" height="200" viewBox="0 0 340 200" fill="none">
+      {extras.map(([x, y, sc, type], i) => {
+        const hc = type === 'male' ? maleHead : femaleHead
+        const bc = type === 'male' ? maleFill : femaleFill
+        const fc = type === 'male' ? '#2563a8' : '#9d174d'
+        const w  = type === 'male' ? 28 : 24
+        const bh = 70 * sc
+        const hr = 9 * sc
+        const opac = 0.35 + sc * 0.55
+        return (
+          <g key={i} transform={`translate(${x - w/2} ${y})`} opacity={opac}>
+            {/* head */}
+            <ellipse cx={w/2} cy={hr} rx={hr*0.9} ry={hr} fill={hc} fillOpacity={0.9} />
+            {type === 'male' ? (
+              <>
+                <path d={`M${w*0.08} ${hr*2.8} Q${w/2} ${hr*2.2} ${w*0.92} ${hr*2.8} L${w*0.88} ${bh} L${w*0.12} ${bh}Z`} fill={bc} />
+                <line x1={w/2} y1={hr*2.8} x2={w/2} y2={bh-bh*0.25} stroke={fc} strokeWidth={1} strokeOpacity={0.45} />
+                <rect x={w*0.18} y={bh-bh*0.28} width={w*0.25} height={bh*0.28} rx={w*0.06} fill={bc} />
+                <rect x={w*0.57} y={bh-bh*0.28} width={w*0.25} height={bh*0.28} rx={w*0.06} fill={bc} />
+              </>
+            ) : (
+              <>
+                <path d={`M${w*0.1} ${hr*2.6} Q${w/2} ${hr*2.1} ${w*0.9} ${hr*2.6} L${w*0.97} ${bh} L${w*0.03} ${bh}Z`} fill={bc} />
+                <path d={`M${w*0.06} ${bh-bh*0.28} Q${w/2} ${bh-bh*0.18} ${w*0.94} ${bh-bh*0.28} L${w*0.97} ${bh} L${w*0.03} ${bh}Z`} fill={fc} fillOpacity={0.45} />
+              </>
+            )}
+          </g>
+        )
+      })}
     </svg>
   )
 }
@@ -342,13 +410,14 @@ function DrawAnimation({
       timers.current.push(id)
     }
 
-    // door swings open over step0→step1
+    // door swings open — ease-out quad で自然な減速
     const doorDur = steps[1] - steps[0]
-    const doorFps = 16
-    for (let i = 0; i <= 20; i++) {
-      const t = steps[0] + (doorDur * i) / 20
-      const angle = i / 20
-      at(t, () => setDoorAngle(angle))
+    for (let i = 0; i <= 30; i++) {
+      const t = steps[0] + (doorDur * i) / 30
+      const linear = i / 30
+      // ease-out cubic: 速く始まり最後にゆっくり止まる
+      const eased = 1 - Math.pow(1 - linear, 3)
+      at(t, () => setDoorAngle(eased))
     }
 
     at(steps[1], () => setStep(1)) // interior visible
@@ -872,17 +941,7 @@ export default function LuckyDrawPage() {
           </div>
         </div>
 
-        {/* Rates */}
-        <div className="mx-4 mt-5 rounded-xl bg-zinc-900/60 border border-zinc-800 px-4 py-3">
-          <p className="text-xs text-zinc-500 mb-2 font-semibold">排出率</p>
-          <div className="grid grid-cols-4 gap-2 text-center text-[11px]">
-            <div className="flex flex-col gap-0.5"><span className="text-zinc-600">はずれ</span><span className="text-zinc-400 font-bold">50%</span></div>
-            <div className="flex flex-col gap-0.5"><span className="text-pink-400">ノーマル</span><span className="text-pink-300 font-bold">35%</span></div>
-            <div className="flex flex-col gap-0.5"><span className="text-purple-400">レア</span><span className="text-purple-300 font-bold">10%</span></div>
-            <div className="flex flex-col gap-0.5"><span className="text-amber-400">レジェンド</span><span className="text-amber-300 font-bold">5%</span></div>
-          </div>
-          <p className="text-[10px] text-zinc-700 mt-2">※ はずれの場合も1Jレージを付与</p>
-        </div>
+        {/* 排出率: 非表示 */}
 
         {/* Recent history */}
         {state.drawHistory.length > 0 && (
