@@ -140,6 +140,24 @@ export const MOCK_TITLES: MemberTitle[] = [
   { id: 'tl5', title: '常連の風格',     description: 'Jレージ交換で獲得',       isEarned: false, isSelected: false },
 ]
 
+export type MemberFrame = {
+  id: string
+  name: string
+  description: string
+  cssGradient: string   // for preview ring
+  isEarned: boolean
+  isSelected: boolean
+  earnedVia?: string
+}
+
+export const MOCK_FRAMES: MemberFrame[] = [
+  { id: 'fr0', name: 'なし',         description: 'フレームなし',                     cssGradient: 'conic-gradient(#3f3f46, #3f3f46)',          isEarned: true,  isSelected: false },
+  { id: 'fr1', name: 'シルバー',     description: '10回来店で解放',                   cssGradient: 'conic-gradient(#a1a1aa, #e4e4e7, #a1a1aa)', isEarned: true,  isSelected: true, earnedVia: '10回来店達成' },
+  { id: 'fr2', name: '金縁',         description: 'Jレージ交換で取得',               cssGradient: 'conic-gradient(#b45309, #fbbf24, #b45309)', isEarned: true,  isSelected: false, earnedVia: 'Jレージ交換' },
+  { id: 'fr3', name: '深夜の煌',     description: '期間限定テーマ（2026年8月）',      cssGradient: 'conic-gradient(#1e1b4b, #6d28d9, #0ea5e9)', isEarned: false, isSelected: false, earnedVia: 'Jレージ交換' },
+  { id: 'fr4', name: 'ルージュ',     description: '未解放 — 30回来店で解放',         cssGradient: 'conic-gradient(#991b1b, #f43f5e, #991b1b)', isEarned: false, isSelected: false },
+]
+
 export const MOCK_STREAK: MemberStreak = {
   visitStreak:     4,
   visitStreakBest: 6,
