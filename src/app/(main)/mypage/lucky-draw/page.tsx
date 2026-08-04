@@ -557,19 +557,6 @@ function DrawAnimation({
           <GoldParticles />
         )}
 
-        {/* Rarity hint text */}
-        <p style={{
-          color: hColor,
-          fontSize: 13,
-          fontWeight: 700,
-          letterSpacing: '0.2em',
-          textTransform: 'uppercase',
-          opacity: step >= 5 ? 1 : 0,
-          animation: step >= 5 && !reduced ? 'fadeInUp 0.4s ease-out 0.3s both' : 'none',
-          textShadow: `0 0 12px ${hGlow}`,
-        }}>
-          {rarity === 'legend' ? '— LEGEND —' : rarity === 'rare' ? '— RARE —' : rarity === 'normal' ? '— NORMAL —' : ''}
-        </p>
       </div>
 
       {/* Step 6–7: Heart zoom to centre */}
