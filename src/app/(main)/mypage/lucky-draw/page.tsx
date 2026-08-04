@@ -621,15 +621,6 @@ function DrawAnimation({
   const hColor = HEART_COLOR[rarity]
   const hGlow  = HEART_GLOW[rarity]
 
-  // ハート出現時: 白 → 中間色 → フルレアリティ の3段階
-  useEffect(() => {
-    if (step !== 5) return
-    setHeartDisplayColor('#ffffff')
-    const t1 = setTimeout(() => setHeartDisplayColor(HEART_MID_COLOR[rarity] ?? hColor), shortMode ? 300 : 700)
-    const t2 = setTimeout(() => setHeartDisplayColor(hColor),                              shortMode ? 600 : 1400)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, [step, rarity, hColor, shortMode])
-
   useEffect(() => {
     if (reduced) { onComplete(); return }
 
@@ -638,12 +629,11 @@ function DrawAnimation({
       timers.current.push(id)
     }
 
-    // door swings open — ease-out quad で自然な減速
+    // door swings open — ease-out cubic で自然な減速
     const doorDur = steps[1] - steps[0]
     for (let i = 0; i <= 30; i++) {
       const t = steps[0] + (doorDur * i) / 30
       const linear = i / 30
-      // ease-out cubic: 速く始まり最後にゆっくり止まる
       const eased = 1 - Math.pow(1 - linear, 3)
       at(t, () => setDoorAngle(eased))
     }
@@ -654,12 +644,16 @@ function DrawAnimation({
     at(steps[4], () => setStep(4)) // pause before touch
     at(steps[5], () => {           // touch + heart
       setStep(5)
+      setHeartDisplayColor('#ffffff')  // 白スタート
       if (rarity === 'legend') setShowChampagne(true)
       if (rarity === 'legend') {
         at(200, () => setFlash(true))
         at(600, () => setFlash(false))
       }
     })
+    // ハートカラー3段階（メインタイマー管理でstep変化に影響されない）
+    at(steps[5] + (shortMode ? 300 : 700),  () => setHeartDisplayColor(HEART_MID_COLOR[rarity] ?? hColor))
+    at(steps[5] + (shortMode ? 600 : 1400), () => setHeartDisplayColor(hColor))
     at(steps[6], () => setStep(6)) // heart zoom
     at(steps[7], () => setStep(7)) // burst
     at(steps[8], () => onComplete())
@@ -691,16 +685,16 @@ function DrawAnimation({
         <div className="absolute inset-0">
           <DoorSVG openAngle={doorAngle} />
         </div>
-        {/* "JIS Lounge" floor text */}
+        {/* "JIS Lounge" floor text — 画面下部に固定 */}
         <p style={{
-          position: 'relative', zIndex: 2,
+          position: 'absolute', bottom: 24, left: 0, right: 0, zIndex: 2,
+          textAlign: 'center',
           opacity: doorAngle > 0.3 ? Math.min(1, (doorAngle - 0.3) / 0.4) : 0,
           transition: 'opacity 0.3s',
           color: '#52525b',
           fontSize: 11,
           letterSpacing: '0.3em',
           textTransform: 'uppercase',
-          marginTop: 16,
         }}>
           JIS Lounge
         </p>
