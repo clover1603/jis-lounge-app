@@ -1,5 +1,6 @@
 'use client'
 
+import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -85,10 +86,11 @@ function InfoCard({ label, children }: { label: string; children: React.ReactNod
 export default function ChallengeDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = use(params)
   const router  = useRouter()
-  const challenge = ALL_CHALLENGES.find(c => c.id === params.id)
+  const challenge = ALL_CHALLENGES.find(c => c.id === id)
 
   if (!challenge) {
     return (
