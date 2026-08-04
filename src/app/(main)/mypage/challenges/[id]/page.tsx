@@ -16,9 +16,13 @@ function formatDate(iso: string) {
   return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 }
 
-function periodLabel(type: 'monthly' | 'cumulative' | 'limited') {
+function periodLabel(type: string) {
+  if (type === 'daily')      return '本日中'
+  if (type === 'weekly')     return '今週中'
   if (type === 'monthly')    return '今月中'
   if (type === 'cumulative') return '累計'
+  if (type === 'permanent')  return '累計'
+  if (type === 'event')      return '期間限定'
   return '期間限定'
 }
 

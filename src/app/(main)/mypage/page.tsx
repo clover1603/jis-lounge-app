@@ -9,6 +9,9 @@ import { MOCK_JOURNEY, RANK_ACCENT } from '@/lib/mock-member-journey'
 import { MOCK_JILEAGE_BALANCE, MOCK_TICKETS_COUNT, MOCK_ACHIEVEMENTS } from '@/lib/mock-member-engagement'
 import { getNextChallenge, getActiveCount, CATEGORY_LABEL } from '@/lib/mock-challenges'
 import { loadTitleSelection, buildTitleText } from '@/lib/mock-title-words'
+import { loadState } from '@/lib/engagement-storage'
+import type { EngagementState } from '@/lib/engagement-storage'
+import { FRAME_MAP } from '@/lib/mock-lucky-draw'
 
 type DbProfile = {
   member_id: string
@@ -46,6 +49,7 @@ export default function MyPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [displayTitle, setDisplayTitle] = useState<string | null>(null)
+  const [engState, setEngState] = useState<EngagementState | null>(null)
 
   async function loadRanking(metric: RankingMetric, period: RankingPeriod) {
     setRankingLoading(true)
@@ -79,6 +83,10 @@ export default function MyPage() {
     setDisplayTitle(buildTitleText(sel.prefixId, sel.suffixId))
   }, [])
 
+  useEffect(() => {
+    setEngState(loadState())
+  }, [])
+
   if (loading) return (
     <div className="flex justify-center items-center min-h-screen">
       <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -96,7 +104,9 @@ export default function MyPage() {
     seatingHours: profile.seating_hours ?? 0,
   } : { nickname: 'ゲスト', age: null, memberId: '---', gender: 'male' as Gender, rank: 'BRONZE' as MemberRank, mileage: 0, rating: 3.0, seatingHours: 0 }
 
-
+  const equippedFrameLabel = engState?.equippedFrameId
+    ? (FRAME_MAP[engState.equippedFrameId]?.label ?? '未設定')
+    : '未設定'
 
   return (
     <div className="flex flex-col min-h-screen bg-black">
@@ -260,6 +270,38 @@ export default function MyPage() {
               <p className="text-xs text-zinc-500 mt-1">{MOCK_JOURNEY.visitedStoreIds.length}店舗 利用済み</p>
             </Link>
 
+          </div>
+        </div>
+
+        {/* ── マイコレクション ── */}
+        <div className="mx-4 mb-4">
+          <p className="text-xs text-zinc-500 font-medium uppercase tracking-wider mb-2 mt-6">マイコレクション</p>
+          <div className="space-y-2">
+            <Link href="/mypage/challenges" className="bg-zinc-900 rounded-xl border border-zinc-800 px-4 py-3.5 flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">チャレンジ</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400">抽選券 {engState?.tickets ?? 0}枚</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+              </div>
+            </Link>
+            <Link href="/mypage/lucky-draw" className="bg-zinc-900 rounded-xl border border-zinc-800 px-4 py-3.5 flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">ラッキーくじ</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400">Jレージ {engState?.jileage ?? 0}pt</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+              </div>
+            </Link>
+            <Link href="/mypage/customize" className="bg-zinc-900 rounded-xl border border-zinc-800 px-4 py-3.5 flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">プロフィール装飾</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400">{equippedFrameLabel}</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+              </div>
+            </Link>
+            <Link href="/mypage/rewards" className="bg-zinc-900 rounded-xl border border-zinc-800 px-4 py-3.5 flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">報酬履歴</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+            </Link>
           </div>
         </div>
 

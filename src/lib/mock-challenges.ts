@@ -1,7 +1,7 @@
 // ─── 型定義 ────────────────────────────────────────────────────────
 
 export type ChallengeCategory = 'visit' | 'rating' | 'order' | 'seating' | 'limited'
-export type ChallengePeriodType = 'monthly' | 'cumulative' | 'limited'
+export type ChallengePeriodType = 'daily' | 'weekly' | 'monthly' | 'cumulative' | 'permanent' | 'event' | 'limited'
 export type ChallengeStatus = 'active' | 'completed' | 'locked'
 export type ChallengeRewardType = 'draw_ticket' | 'jileage' | 'title_word' | 'trophy' | 'coupon'
 
@@ -180,6 +180,125 @@ export const REWARD_ICON_PATH: Record<ChallengeRewardType, string> = {
   trophy:      'M6 9H4a2 2 0 0 1-2-2V5h4m12 4h2a2 2 0 0 0 2-2V5h-4M6 9v2a6 6 0 0 0 12 0V9M9 21h6M12 17v4',
   coupon:      'M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6m16-4H4m0 0V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2',
 }
+
+// ─── デイリーチャレンジ（毎日リセット・チケット報酬） ─────────────────
+
+export const DAILY_CHALLENGES: Challenge[] = [
+  {
+    id: 'daily-1',
+    title: 'ログインチェック',
+    description: '今日アプリを開いてチェックイン',
+    category: 'visit',
+    periodType: 'daily',
+    current: 1,
+    target: 1,
+    unit: '回',
+    status: 'completed',
+    rewardType: 'jileage',
+    rewardLabel: 'Jレージ +10pt',
+    rewardAmount: 10,
+  },
+  {
+    id: 'daily-2',
+    title: '掲示板を見てみよう',
+    description: '今日掲示板をチェックする',
+    category: 'visit',
+    periodType: 'daily',
+    current: 1,
+    target: 1,
+    unit: '回',
+    status: 'completed',
+    rewardType: 'jileage',
+    rewardLabel: 'Jレージ +10pt',
+    rewardAmount: 10,
+    actionHref: '/board',
+    actionLabel: '掲示板を見る',
+  },
+  {
+    id: 'daily-3',
+    title: '今日のチャレンジ3件目',
+    description: 'プロフィールを確認する',
+    category: 'visit',
+    periodType: 'daily',
+    current: 0,
+    target: 1,
+    unit: '回',
+    status: 'active',
+    rewardType: 'jileage',
+    rewardLabel: 'Jレージ +10pt',
+    rewardAmount: 10,
+    actionHref: '/mypage',
+    actionLabel: 'マイページを見る',
+  },
+]
+
+// ─── ウィークリーチャレンジ ─────────────────────────────────────────
+
+export const WEEKLY_CHALLENGES: Challenge[] = [
+  {
+    id: 'weekly-1',
+    title: '今週の来店チャレンジ',
+    description: '今週中に1回来店する',
+    category: 'visit',
+    periodType: 'weekly',
+    current: 0,
+    target: 1,
+    unit: '回',
+    status: 'active',
+    rewardType: 'draw_ticket',
+    rewardLabel: 'ラッキーくじ抽選券 ×1',
+    rewardAmount: 1,
+    endAt: '2026-08-10',
+    actionHref: '/stores',
+    actionLabel: '店舗を探す',
+  },
+  {
+    id: 'weekly-2',
+    title: '今週の掲示板投稿',
+    description: '今週中に掲示板へ投稿する',
+    category: 'rating',
+    periodType: 'weekly',
+    current: 0,
+    target: 1,
+    unit: '回',
+    status: 'active',
+    rewardType: 'jileage',
+    rewardLabel: 'Jレージ +30pt',
+    rewardAmount: 30,
+    endAt: '2026-08-10',
+    actionHref: '/board/new',
+    actionLabel: '投稿する',
+  },
+]
+
+// ─── 恒久チャレンジ（累計・無期限） ──────────────────────────────────
+
+export const PERMANENT_CHALLENGES: Challenge[] = [
+  ...MOCK_CHALLENGES,
+]
+
+// ─── イベントチャレンジ ─────────────────────────────────────────────
+
+export const EVENT_CHALLENGES: Challenge[] = [
+  {
+    id: 'event-summer-1',
+    title: '夏のスペシャルくじ',
+    description: '期間中にラッキーくじを3回引く',
+    category: 'limited',
+    periodType: 'event',
+    current: 0,
+    target: 3,
+    unit: '回',
+    status: 'active',
+    rewardType: 'draw_ticket',
+    rewardLabel: 'ラッキーくじ抽選券 ×3',
+    rewardAmount: 3,
+    startAt: '2026-08-01',
+    endAt: '2026-08-31',
+    actionHref: '/mypage/lucky-draw',
+    actionLabel: 'くじを引く',
+  },
+]
 
 export const ALL_CHALLENGES = [...MOCK_CHALLENGES, ...MOCK_COMPLETED_CHALLENGES]
 
