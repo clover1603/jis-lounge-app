@@ -438,7 +438,10 @@ export function applyDrawResults(
     rarities.push(reward.rarity)
     rewardIds.push(reward.id)
 
-    if (reward.rarity === 'miss') continue
+    if (reward.rarity === 'miss') {
+      next = { ...next, jileage: next.jileage + 1 }
+      continue
+    }
 
     if (isDuplicate) {
       next = { ...next, jileage: next.jileage + duplicateJileage }
