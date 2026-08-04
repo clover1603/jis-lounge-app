@@ -7,6 +7,7 @@ import { MemberRank, Gender } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
 import { MOCK_JOURNEY, RANK_ACCENT } from '@/lib/mock-member-journey'
 import { MOCK_JILEAGE_BALANCE, MOCK_TICKETS_COUNT, MOCK_ACHIEVEMENTS } from '@/lib/mock-member-engagement'
+import { getNextChallenge, getActiveCount, CATEGORY_LABEL } from '@/lib/mock-challenges'
 
 type DbProfile = {
   member_id: string
@@ -135,6 +136,37 @@ export default function MyPage() {
           </div>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
         </Link>
+
+        {/* ── チャレンジ概要カード ── */}
+        {(() => {
+          const next = getNextChallenge()
+          if (!next) return null
+          const pct = Math.min(100, Math.round((next.current / next.target) * 100))
+          const remaining = next.target - next.current
+          return (
+            <Link href="/mypage/challenges" className="mx-4 mb-4 block bg-zinc-900 rounded-2xl border border-zinc-800 px-4 py-4 hover:bg-zinc-800/60 transition-colors">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400">{CATEGORY_LABEL[next.category]}</span>
+                  <span className="text-xs text-zinc-500">チャレンジ {getActiveCount()}件進行中</span>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#52525b" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+              </div>
+              <p className="text-sm font-semibold text-white mb-1">{next.title}</p>
+              <p className="text-xs text-zinc-500 mb-3">{next.description}</p>
+              <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden mb-1.5">
+                <div className="h-full bg-white rounded-full transition-all" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-500 tabular-nums">{next.current}<span className="text-zinc-700">/{next.target}{next.unit}</span></span>
+                {remaining <= Math.ceil(next.target * 0.3) && remaining > 0
+                  ? <span className="text-xs text-white font-semibold">あと{remaining}{next.unit}</span>
+                  : <span className="text-xs text-zinc-600">{pct}%</span>
+                }
+              </div>
+            </Link>
+          )
+        })()}
 
         {/* ── 継続機能サマリーカード ── */}
         <div className="mx-4 mb-4 space-y-3">
